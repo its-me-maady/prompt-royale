@@ -36,6 +36,15 @@ class Database {
     },
     findPending: async () => {
       return Array.from(this._jobs.values()).filter(j => j.status === 'Pending');
+    },
+    findAndLockNextPending: async () => {
+      for (const [id, job] of this._jobs.entries()) {
+        if (job.status === 'Pending') {
+          job.status = 'Processing'; // Atomic lock
+          return job;
+        }
+      }
+      return null;
     }
   }
 }
