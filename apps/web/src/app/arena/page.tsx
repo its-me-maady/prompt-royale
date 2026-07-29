@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { GameState } from '../../../../engine/game-logic';
+import { GameState } from '../../engine/game-logic';
 
 export default function BossRaidArena() {
   const [gameState, setGameState] = useState<GameState | null>(null);
