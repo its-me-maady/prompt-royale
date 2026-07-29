@@ -10,6 +10,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Notes are required' }, { status: 400 });
     }
 
+    if (notes.length > 10000) {
+      return NextResponse.json({ error: 'Notes must be under 10,000 characters' }, { status: 413 });
+    }
+
     const restyledSummary = await llmService.restylePrompt(notes);
 
     return NextResponse.json({

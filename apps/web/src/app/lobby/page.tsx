@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Lobby() {
+  const router = useRouter();
   const [lobbyData, setLobbyData] = useState<{lobbyId: string, inviteLink: string} | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -48,7 +50,7 @@ export default function Lobby() {
             </div>
             
             <button 
-              onClick={() => window.location.href = '/arena'}
+              onClick={() => router.push('/arena')}
               className="mt-6 w-full py-4 bg-gray-900 text-white rounded-xl font-semibold text-lg hover:bg-gray-800 transition-all"
             >
               Start Raid

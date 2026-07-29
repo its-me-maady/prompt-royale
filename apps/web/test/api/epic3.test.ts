@@ -81,5 +81,15 @@ describe('Epic 3: Discord Lobby & Prompt Lab Integration Tests', () => {
       const body = await response.json();
       expect(body).toHaveProperty('error');
     });
+
+    it('should return 413 if notes exceed 10,000 characters', async () => {
+      const longNotes = 'a'.repeat(10001);
+      const req = createJsonRequest({ notes: longNotes });
+      const response = await RestylePromptRoute(req);
+      
+      expect(response.status).toBe(413);
+      const body = await response.json();
+      expect(body).toHaveProperty('error');
+    });
   });
 });
