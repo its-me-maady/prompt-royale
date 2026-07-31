@@ -1,5 +1,5 @@
 ---
-name: plan
+name: plan-vteam
 description: I need to plan the implementation of
 ---
 

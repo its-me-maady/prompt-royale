@@ -1,5 +1,5 @@
 ---
-name: resume
+name: resume-session
 description: Resume from a previous session's handoff.
 ---
 
