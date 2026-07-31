@@ -1,26 +1,33 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Lobby() {
-  const router = useRouter();
   const [lobbyData, setLobbyData] = useState<{lobbyId: string, inviteLink: string} | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const createLobby = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/lobby/create', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setLobbyData(data);
+      } else {
+        setError('Failed to create lobby. Please try again.');
       }
     } catch (e) {
-      console.error(e);
+      setError('Network error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Basic XSS prevention for the invite link
+  const isSafeLink = lobbyData?.inviteLink?.startsWith('http://') || lobbyData?.inviteLink?.startsWith('https://');
+  const safeInviteLink = isSafeLink ? lobbyData.inviteLink : '#';
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-8 font-sans text-gray-100 relative overflow-hidden">
@@ -30,6 +37,12 @@ export default function Lobby() {
       <div className="z-10 max-w-md w-full text-center bg-gray-900/60 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-gray-800">
         <h1 className="text-4xl font-extrabold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-orange-400">Squad Lobby</h1>
         <p className="text-gray-400 mb-8">Create a lobby and invite your friends via Discord to begin the Raid.</p>
+        
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-xl text-red-200">
+            {error}
+          </div>
+        )}
         
         {!lobbyData ? (
           <button 
@@ -47,17 +60,21 @@ export default function Lobby() {
             </div>
             <div className="p-4 bg-red-950/30 rounded-xl border border-red-900/50">
               <p className="text-xs text-red-500 uppercase tracking-widest font-bold mb-2">Discord Invite</p>
-              <a href={lobbyData.inviteLink} target="_blank" rel="noreferrer" className="font-semibold text-red-400 hover:text-red-300 underline text-lg transition-colors">
-                {lobbyData.inviteLink}
-              </a>
+              {isSafeLink ? (
+                <a href={safeInviteLink} target="_blank" rel="noreferrer" className="font-semibold text-red-400 hover:text-red-300 underline text-lg transition-colors">
+                  {safeInviteLink}
+                </a>
+              ) : (
+                <p className="text-red-500 font-semibold text-lg">Invalid invite link provided by server.</p>
+              )}
             </div>
             
-            <button 
-              onClick={() => router.push('/arena')}
-              className="mt-6 w-full py-4 bg-gray-100 text-gray-900 rounded-xl font-bold text-lg hover:bg-white transition-all shadow-lg"
+            <Link 
+              href="/arena"
+              className="mt-6 block w-full py-4 bg-gray-100 text-gray-900 rounded-xl font-bold text-lg hover:bg-white transition-all shadow-lg text-center"
             >
               Start Raid
-            </button>
+            </Link>
           </div>
         )}
       </div>

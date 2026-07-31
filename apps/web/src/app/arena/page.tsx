@@ -7,7 +7,7 @@ export default function BossRaidArena() {
 
   useEffect(() => {
     // We try to catch cases where we are in a test environment and EventSource isn't mocked
-    if (typeof window !== 'undefined' && !window.EventSource) {
+    if (!window.EventSource) {
       console.warn("EventSource is not defined. Skipping SSE connection.");
       return;
     }
@@ -15,8 +15,17 @@ export default function BossRaidArena() {
     const eventSource = new EventSource('/api/arena/sse');
     
     eventSource.onmessage = (event) => {
-      const state = JSON.parse(event.data);
-      setGameState(state);
+      try {
+        const state = JSON.parse(event.data);
+        // Basic structural validation before setting state
+        if (state && Array.isArray(state.players) && state.boss && typeof state.boss.hp === 'number') {
+          setGameState(state);
+        } else {
+          console.warn('Received malformed SSE payload', state);
+        }
+      } catch (e) {
+        console.error('Failed to parse SSE payload', e);
+      }
     };
 
     return () => {
@@ -41,7 +50,7 @@ export default function BossRaidArena() {
       {/* Top Bar: Subtle Health Indicators */}
       <header className="flex justify-between items-center mb-16 z-10 relative">
         <div className="flex gap-4">
-          {gameState.players.map((p, i) => (
+          {gameState.players?.map((p, i) => (
             <div key={p.id} className="text-sm">
               <span className="font-bold text-gray-300">P{i + 1}</span>
               <div className="w-16 h-1.5 bg-gray-800 mt-1 rounded-full overflow-hidden">
@@ -58,7 +67,7 @@ export default function BossRaidArena() {
           <div className="w-48 h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
              <div 
                 className="h-full bg-red-600 transition-all duration-300 shadow-[0_0_10px_rgba(220,38,38,0.8)]"
-                style={{ width: `${(gameState.boss.hp / gameState.boss.maxHp) * 100}%` }}
+                style={{ width: `${(gameState.boss?.hp / gameState.boss?.maxHp) * 100}%` }}
               />
           </div>
         </div>
