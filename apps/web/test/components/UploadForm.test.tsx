@@ -1,16 +1,18 @@
+import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import UploadForm from '@/components/UploadForm';
 
-// Mock the global fetch
-global.fetch = vi.fn();
+
 
 describe('UploadForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    global.fetch = vi.fn();
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     cleanup();
   });
 
@@ -42,7 +44,8 @@ describe('UploadForm', () => {
     const file = new File(['dummy'], 'lecture.mp3', { type: 'audio/mpeg' });
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    fireEvent.click(submitBtn);
+    const form = submitBtn.closest('form');
+    if (form) fireEvent.submit(form);
 
     await waitFor(() => {
       expect(screen.getByText('Upload and processing successful!')).toBeTruthy();

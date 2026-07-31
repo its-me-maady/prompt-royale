@@ -23,35 +23,38 @@ export default function Lobby() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8 font-sans">
-      <div className="max-w-md w-full text-center bg-white p-10 rounded-2xl shadow-sm border border-gray-100">
-        <h1 className="text-3xl font-bold mb-4 text-gray-800">Squad Up</h1>
-        <p className="text-gray-500 mb-8">Create a lobby and invite your friends via Discord to begin the Raid.</p>
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-8 font-sans text-gray-100 relative overflow-hidden">
+      {/* Dynamic Background Effects */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-red-600 rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-pulse"></div>
+
+      <div className="z-10 max-w-md w-full text-center bg-gray-900/60 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-gray-800">
+        <h1 className="text-4xl font-extrabold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-orange-400">Squad Lobby</h1>
+        <p className="text-gray-400 mb-8">Create a lobby and invite your friends via Discord to begin the Raid.</p>
         
         {!lobbyData ? (
           <button 
             onClick={createLobby}
             disabled={loading}
-            className="w-full py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 disabled:opacity-50 transition-all"
+            className="w-full py-4 bg-red-600 text-white rounded-xl font-bold text-lg hover:bg-red-700 disabled:opacity-50 transition-all shadow-lg hover:shadow-red-600/30"
           >
             {loading ? 'Creating Lobby...' : 'Create Lobby'}
           </button>
         ) : (
           <div className="space-y-6">
-            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <p className="text-sm text-gray-500 uppercase tracking-widest font-bold mb-2">Lobby ID</p>
-              <p className="font-mono text-lg text-gray-800">{lobbyData.lobbyId}</p>
+            <div className="p-4 bg-gray-950/50 rounded-xl border border-gray-800">
+              <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">Lobby ID</p>
+              <p className="font-mono text-xl text-gray-200">{lobbyData.lobbyId}</p>
             </div>
-            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-              <p className="text-sm text-indigo-500 uppercase tracking-widest font-bold mb-2">Discord Invite</p>
-              <a href={lobbyData.inviteLink} target="_blank" rel="noreferrer" className="font-semibold text-indigo-700 underline text-lg">
+            <div className="p-4 bg-red-950/30 rounded-xl border border-red-900/50">
+              <p className="text-xs text-red-500 uppercase tracking-widest font-bold mb-2">Discord Invite</p>
+              <a href={lobbyData.inviteLink} target="_blank" rel="noreferrer" className="font-semibold text-red-400 hover:text-red-300 underline text-lg transition-colors">
                 {lobbyData.inviteLink}
               </a>
             </div>
             
             <button 
               onClick={() => router.push('/arena')}
-              className="mt-6 w-full py-4 bg-gray-900 text-white rounded-xl font-semibold text-lg hover:bg-gray-800 transition-all"
+              className="mt-6 w-full py-4 bg-gray-100 text-gray-900 rounded-xl font-bold text-lg hover:bg-white transition-all shadow-lg"
             >
               Start Raid
             </button>
