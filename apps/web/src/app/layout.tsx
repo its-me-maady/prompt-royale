@@ -17,8 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-gray-900 focus:text-white">
+          Skip to main content
+        </a>
         <Header />
-        {children}
+        <main id="main-content">
+          {children}
+        </main>
       </body>
     </html>
   );
