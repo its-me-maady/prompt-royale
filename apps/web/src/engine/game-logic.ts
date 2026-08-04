@@ -1,4 +1,8 @@
+/**
+ * agent-notes: { ctx: "P0 principal SDE, TDD green phase", deps: ["apps/web/test/engine/game-logic.test.ts"], state: "canonical", last: "sato@2026-08-04", key: ["implements game logic"] }
+ */
 export type PlayerStatus = 'alive' | 'dead';
+export type GameStatus = 'active' | 'victory' | 'revive' | 'defeat';
 
 export interface Player {
   id: string;
@@ -14,6 +18,7 @@ export interface Boss {
 export interface GameState {
   boss: Boss;
   players: Player[];
+  status: GameStatus;
 }
 
 export interface PlayerVote {
@@ -81,5 +86,31 @@ export function calculateRoundResults(state: GameState, votes: PlayerVote[]): Ga
     }
   }
 
+  // Check state transitions
+  if (newState.boss.hp === 0) {
+    newState.status = 'victory';
+  } else if (newState.players.every(p => p.status === 'dead')) {
+    newState.status = 'revive';
+  }
+
+  return newState;
+}
+
+/**
+ * Processes the outcome of a team revive attempt.
+ */
+export function processRevive(state: GameState, success: boolean): GameState {
+  const newState: GameState = JSON.parse(JSON.stringify(state));
+  
+  if (success) {
+    newState.status = 'active';
+    newState.players.forEach(p => {
+      p.hp = 100;
+      p.status = 'alive';
+    });
+  } else {
+    newState.status = 'defeat';
+  }
+  
   return newState;
 }
