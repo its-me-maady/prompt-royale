@@ -5,9 +5,6 @@ description: >
   Tara (test quality/coverage), and Pierrot (security/compliance) lenses.
   Use proactively after code changes to review quality before committing.
   Not a persona — an invocation pattern combining three review lenses.
-disallowedTools: Edit, NotebookEdit, WebSearch, WebFetch
-model: inherit
-maxTurns: 15
 ---
 <!-- agent-notes: { ctx: "composite four-lens code reviewer, writes review docs", deps: [docs/methodology/personas.md, .agents/agents/vik.md, .agents/agents/tara.md, .agents/agents/pierrot.md, .agents/agents/archie.md], state: canonical, last: "coordinator@2026-03-18", key: ["writes review docs to docs/code-reviews/ for large reviews", "Lens 4 Archie added for architectural conformance"] } -->
 
