@@ -7,17 +7,24 @@ const SQUAD_ID = 'test-squad-1'; // Hardcoded for MVP
 
 export default function BossRaidArena() {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [playerId] = useState(`p${Math.floor(Math.random() * 10000)}`);
+  const [playerId, setPlayerId] = useState<string>('');
   const [isHost, setIsHost] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
   const [votes, setVotes] = useState<PlayerVote[]>([]);
   const [myVote, setMyVote] = useState<number | null>(null);
   const [question, setQuestion] = useState<{question: string, options: string[], correctIndex: number} | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   
   const channelRef = useRef<any>(null);
 
+  useEffect(() => {
+    setPlayerId(`p${Math.floor(Math.random() * 10000)}`);
+  }, []);
+
   // Initialize game state and channel
   useEffect(() => {
+    if (!playerId) return;
+
     const channel = supabaseClient.channel(`boss-raid-${SQUAD_ID}`);
     channelRef.current = channel;
 
@@ -27,6 +34,8 @@ export default function BossRaidArena() {
         const playersIds = Object.keys(state).sort();
         if (playersIds[0] === playerId) {
           setIsHost(true);
+        } else {
+          setIsHost(false);
         }
         
         // Initial setup for Host
@@ -52,10 +61,14 @@ export default function BossRaidArena() {
       .on('broadcast', { event: 'state_update' }, ({ payload }) => {
         setGameState(payload);
       })
+      .on('broadcast', { event: 'error_update' }, ({ payload }) => {
+        setFetchError(payload);
+      })
       .on('broadcast', { event: 'timer_update' }, ({ payload }) => {
         setTimeLeft(payload.time);
       })
       .on('broadcast', { event: 'question_update' }, ({ payload }) => {
+        setFetchError(null);
         setQuestion(payload);
         setMyVote(null);
         setVotes([]);
@@ -78,34 +91,51 @@ export default function BossRaidArena() {
     };
   }, [playerId]);
 
-  const fetchQuestion = async () => {
+  const fetchQuestion = async (retryCount = 0) => {
     try {
-      const res = await fetch('/api/arena/revive');
+      setFetchError(null);
+      if (retryCount > 0) {
+        setFetchError('Retrying connection to AI Core...');
+        channelRef.current?.send({ type: 'broadcast', event: 'error_update', payload: 'Retrying connection to AI Core...' });
+      }
+      
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const token = session?.access_token || 'anon';
+      const res = await fetch('/api/arena/revive', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      
+      setFetchError(null);
       setQuestion(data);
       channelRef.current?.send({ type: 'broadcast', event: 'question_update', payload: data });
     } catch (e) {
-      console.error(e);
+      console.error('Failed to fetch revive question:', e);
+      if (retryCount < 2) {
+         setFetchError('AI Core connection unstable... Auto-retrying...');
+         channelRef.current?.send({ type: 'broadcast', event: 'error_update', payload: 'AI Core connection unstable... Auto-retrying...' });
+         setTimeout(() => fetchQuestion(retryCount + 1), 1500);
+      } else {
+         const errorMsg = 'AI Core connection lost. Boss is jamming signals!';
+         setFetchError(errorMsg);
+         channelRef.current?.send({ type: 'broadcast', event: 'error_update', payload: errorMsg });
+      }
     }
   };
 
   // Host Timer Logic & Resolution
+  // Host Timer Logic
   useEffect(() => {
     if (!isHost || !gameState || gameState.status !== 'active' || !question) return;
-
-    // Check if everyone voted
-    const activePlayers = gameState.players.filter(p => p.status === 'alive');
-    if (activePlayers.length > 0 && votes.length === activePlayers.length) {
-       resolveRound();
-       return;
-    }
 
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          resolveRound();
-          return 0;
+          return 0; // The other useEffect will resolve the round when timeLeft hits 0
         }
         channelRef.current?.send({ type: 'broadcast', event: 'timer_update', payload: { time: prev - 1 } });
         return prev - 1;
@@ -113,7 +143,20 @@ export default function BossRaidArena() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isHost, gameState, votes, question]);
+  }, [isHost, gameState?.status, question]); // Removed `votes` and `gameState` as dependencies
+
+  // Host Round Resolution Logic (Triggered by Timer or Votes)
+  useEffect(() => {
+    if (!isHost || !gameState || gameState.status !== 'active' || !question) return;
+
+    const activePlayers = gameState.players.filter(p => p.status === 'alive');
+    const allVoted = activePlayers.length > 0 && votes.length === activePlayers.length;
+    const timeOut = timeLeft === 0;
+
+    if (allVoted || timeOut) {
+      resolveRound();
+    }
+  }, [isHost, gameState?.status, votes.length, timeLeft]);
 
   const resolveRound = () => {
     if (!gameState || !question) return;
@@ -217,7 +260,23 @@ export default function BossRaidArena() {
           </div>
         )}
 
-        {(gameState.status === 'active' || gameState.status === 'revive') && question && (
+        {fetchError && !question && (
+          <div className="text-center mt-20">
+            <h2 className="text-2xl text-red-400 mb-6 animate-pulse font-mono">{fetchError}</h2>
+            {isHost ? (
+              <button 
+                onClick={() => fetchQuestion(0)}
+                className="px-8 py-3 bg-red-900/50 hover:bg-red-800/80 border border-red-500/50 rounded-xl text-white font-bold transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.5)]"
+              >
+                Manual Override (Retry)
+              </button>
+            ) : (
+              <p className="text-gray-500 font-mono">Waiting for Host to re-establish connection...</p>
+            )}
+          </div>
+        )}
+
+        {(gameState.status === 'active' || gameState.status === 'revive') && question && !fetchError && (
           <>
             <div className="flex justify-between items-center mb-8">
               <span className={`text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-full ${gameState.status === 'revive' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : 'bg-blue-500/20 text-blue-400 border border-blue-500/50'}`}>

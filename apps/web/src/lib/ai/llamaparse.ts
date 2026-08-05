@@ -1,4 +1,9 @@
 export async function parseDocument(file: Blob): Promise<string> {
+  if (!process.env.LLAMA_CLOUD_API_KEY) {
+    console.warn('LLAMA_CLOUD_API_KEY missing, returning mock document text.');
+    return "This is a mock parsing of the PPT file since no API key is provided. The slides discuss computer science concepts.";
+  }
+
   const formData = new FormData();
   formData.append('file', file);
 

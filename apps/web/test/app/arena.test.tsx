@@ -6,24 +6,27 @@ import { render, screen, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ArenaPage from '../../src/app/arena/page';
 
+let mockCallbacks: Record<string, Function> = {};
+let mockSend = vi.fn();
+
 vi.mock('../../src/lib/db/supabase-client', () => {
-  const onMock = vi.fn().mockReturnThis();
-  const subscribeMock = vi.fn().mockResolvedValue('SUBSCRIBED');
-  const sendMock = vi.fn();
-  const presenceStateMock = vi.fn().mockReturnValue({ 'p1': {} });
-  const trackMock = vi.fn();
-  const unsubscribeMock = vi.fn();
-  
   return {
     supabaseClient: {
       channel: vi.fn(() => ({
-        on: onMock,
-        subscribe: subscribeMock,
-        send: sendMock,
-        presenceState: presenceStateMock,
-        track: trackMock,
-        unsubscribe: unsubscribeMock
-      }))
+        on: vi.fn(function(this: any, type: string, filter: any, callback: Function) {
+          const key = `${type}:${filter.event}`;
+          mockCallbacks[key] = callback;
+          return this;
+        }),
+        subscribe: vi.fn().mockResolvedValue('SUBSCRIBED'),
+        send: mockSend,
+        presenceState: vi.fn().mockReturnValue({ 'p1': {} }),
+        track: vi.fn(),
+        unsubscribe: vi.fn()
+      })),
+      auth: {
+        getSession: async () => ({ data: { session: { access_token: 'test-token' } } })
+      }
     }
   };
 });
@@ -31,10 +34,23 @@ vi.mock('../../src/lib/db/supabase-client', () => {
 describe('Arena Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCallbacks = {};
+    // Mock Math.random so playerId is always 'p1'
+    vi.spyOn(Math, 'random').mockReturnValue(0.0001);
+    
+    // Mock fetch for revive questions
+    global.fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        question: "Test question?",
+        options: ["A", "B", "C", "D"],
+        correctIndex: 0
+      })
+    });
   });
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   it('should render a Boss Raid Arena placeholder when connecting', () => {
@@ -43,13 +59,54 @@ describe('Arena Page', () => {
     expect(screen.getByText(/Connecting to Arena/i)).toBeDefined();
   });
 
-  it('should attempt to connect to Supabase realtime channel', async () => {
+  it('should become host and render state when presence sync fires', async () => {
     render(<ArenaPage />);
     
-    // Check if the placeholder is visible
-    expect(screen.getByText(/Connecting to Arena \(Realtime\)/i)).toBeDefined();
+    // Simulate presence sync
+    await act(async () => {
+      const presenceSync = mockCallbacks['presence:sync'];
+      if (presenceSync) {
+        presenceSync();
+      }
+    });
+
+    // We should see the UI
+    expect(await screen.findByText(/Test question\?/i)).toBeDefined();
+    expect(screen.queryByText(/Connecting to Arena/i)).toBeNull();
+    // It should have sent a state update to broadcast since it became host
+    expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'state_update'
+    }));
+  });
+
+  it('should render received state update when not host', async () => {
+    render(<ArenaPage />);
     
-    // We cannot easily test the exact realtime callback execution in a synchronous test
-    // without exposing the mocked handlers. We just assert the placeholder is there.
+    // Simulate receiving a broadcast from host
+    await act(async () => {
+      const stateUpdate = mockCallbacks['broadcast:state_update'];
+      if (stateUpdate) {
+        stateUpdate({
+          payload: {
+            boss: { hp: 500, maxHp: 1000 },
+            players: [{ id: 'p2', hp: 50, status: 'alive' }],
+            status: 'active'
+          }
+        });
+      }
+      
+      const questionUpdate = mockCallbacks['broadcast:question_update'];
+      if (questionUpdate) {
+        questionUpdate({
+          payload: {
+            question: "Broadcasted question",
+            options: ["A", "B"],
+            correctIndex: 0
+          }
+        });
+      }
+    });
+
+    expect(screen.getByText(/Broadcasted question/i)).toBeDefined();
   });
 });

@@ -12,12 +12,6 @@ const metadataSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    // 1. Basic Auth Check (Placeholder until NextAuth/Clerk)
-    const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.API_SECRET_TOKEN || 'dev-token'}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const formData = await req.formData();
     const file = formData.get('file') as Blob | null;
     const metadataRaw = formData.get('metadata') as string | null;
@@ -52,11 +46,18 @@ export async function POST(req: Request) {
         extractedText = await parseDocument(file);
       }
     } catch (error) {
+      console.error('Extraction failed:', error);
       return NextResponse.json({ error: 'External API processing failed' }, { status: 500 });
     }
 
     // Generate embeddings
-    const embeddings = await generateEmbeddings(extractedText);
+    let embeddings: { content: string; embedding: number[] }[] = [];
+    try {
+      embeddings = await generateEmbeddings(extractedText);
+    } catch (e) {
+      console.error('Embeddings failed:', e);
+      return NextResponse.json({ error: 'Embeddings failed' }, { status: 500 });
+    }
 
     // 3. Bulk Insert Fix
     const recordsToInsert = embeddings.map(chunk => ({

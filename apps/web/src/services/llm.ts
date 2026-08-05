@@ -14,10 +14,11 @@ export const llmService = {
     return `Here is your simplified study guide based on: "${notes.substring(0, 50)}..."`;
   },
   expandQuery: async (query: string): Promise<string[]> => {
-    return [];
+    return [query, "mock expanded query"];
   },
   generateSynthesis: async (chunks: KnowledgeChunk[], query: string): Promise<string> => {
-    return '';
+    const context = chunks.map(c => c.content).join('\n\n');
+    return `Here is a synthesized response for your query "${query}". Based on the uploaded knowledge base: \n\n${context}`;
   },
   generateReviveQuestion: async () => {
     if (!process.env.GROQ_API_KEY) {
