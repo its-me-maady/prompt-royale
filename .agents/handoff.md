@@ -1,42 +1,48 @@
+<!-- agent-notes: { ctx: "Session handoff doc", deps: ["docs/plans/professor-kb-gamification-plan.md"], state: active, last: "grace@2026-08-05" } -->
+
 # Session Handoff
 
-<!-- agent-notes: { ctx: "Session handoff after Epic C planning", deps: ["docs/tracking/2026-07-31-epic-c-boss-raid-plan.md", "docs/plans/2026-07-31-epic-c-boss-raid-plan.md"], state: "active", last: "coordinator@2026-08-01" } -->
-
-**Created:** 2026-08-01
-**Sprint:** N/A (Sprint board tracking not initialized locally for sprints)
-**Wave:** N/A
-**Session summary:** Drafted the detailed implementation plan and tracking artifacts for Epic C (Boss Raid Arena Gamification).
+**Created:** 2026-08-05
+**Sprint:** Professor KB & Gamification
+**Wave:** Phase 3 (Implementation)
+**Session summary:** Completed TDD implementations for Epic A (Knowledge Base) and Epic B (Prompt Lab RAG), and began Epic B UI.
 
 ## What Was Done
-- Created `docs/plans/2026-07-31-epic-c-boss-raid-plan.md` outlining the architecture gate (game state sync) and TDD steps for Epic C.
-- Created `docs/tracking/2026-07-31-epic-c-boss-raid-plan.md` to track progress across Phase 2 (Architecture) and Phase 3 (Implementation).
+- **Epic C (Boss Raid):** Merged the game state engine PR and finalized the Done Gate.
+- **Epic A (KB Ingestion):** Executed strict TDD (Red/Green phases) for audio/OCR transcription and vector DB pipelines. Tracked and committed.
+- **Epic B (Prompt Lab):** Executed strict TDD (Red/Green phases) for the RAG engine query processing and context truncation logic. Squashed and merged via PR #8.
+- **Epic B UI:** Scaffolded the Prompt Lab glassmorphism dark-mode UI and `/api/rag` route in a new worktree (`feature/issue-5-ui`), generating a design mockup for validation.
 
 ## Current State
-- **Branch:** `main`
-- **Last commit:** `6ca90cf chore: session handoff and memory update`
-- **Uncommitted changes:** 2 untracked files (Epic C plan and tracking artifact).
-- **Tests:** 47 passing tests across 12 test files (inherited from previous session).
-- **Board status:** Connection successful. Epic A, 1, 2, and 3 are "Done". Epic B is "In Review".
+- **Branch:** `main` (with active worktree `.worktrees/feature-issue-5-ui`)
+- **Last commit:** `8d57d5b feat: implement prompt lab RAG engine logic (#8)`
+- **Uncommitted changes:** The Prompt Lab UI files in `.worktrees/feature-issue-5-ui` (`apps/web/src/app/api/rag/route.ts` and `apps/web/src/app/prompt-lab/page.tsx`) are currently untracked/uncommitted inside that worktree.
+- **Tests:** 13 total passing tests across 2 new test files (`kb.test.ts` and `rag.test.ts`).
+- **Board status:** Epic A is Done. Epic B is "In Review" (needs to be moved to Done). Epic C is missing from the status column (needs assignment).
 
 ## Sprint Progress
-- **Wave plan:** N/A
-- **Current wave:** N/A
-- **Issues completed this session:** Epic C Planning
-- **Issues remaining in wave:** N/A
-- **Next wave:** N/A
+- **Wave plan:** `docs/plans/professor-kb-gamification-plan.md`
+- **Current wave:** Phase 3 (Implementation)
+- **Issues completed this session:** Epic A (#4), Epic B Engine Logic (#5)
+- **Issues remaining in wave:** Epic B UI Integration (#5), Epic C UI Integration (#6).
 
 ## What To Do Next (in order)
 1. Read `docs/code-map.md` to orient.
-2. Read `docs/product-context.md` for human's product philosophy.
-3. Read `docs/plans/2026-07-31-epic-c-boss-raid-plan.md` for Epic C context.
-4. **Architecture Gate:** Invoke Archie and Wei to debate the Boss Raid Game State Machine (Supabase Realtime vs. Next.js SSE vs WebSockets) and author the ADR.
+2. Review the Prompt Lab UI implementation in `.worktrees/feature-issue-5-ui/apps/web/src/app/prompt-lab/page.tsx`.
+3. Commit the UI changes and wire the `dummyDeps` in the RAG API route to the real RAG engine logic once external services are fully configured.
+4. Address the Code Review findings for Epic B (context truncation string splitting and prompt injection vulnerabilities in `rag.ts`).
+5. Move Issue #5 to "Done" on the GitHub Project Board once UI is finalized.
 
 ## Tracking Artifacts
-- `docs/tracking/2026-07-31-epic-c-boss-raid-plan.md`
+- `docs/tracking/2026-08-05-kb-ingestion-implementation.md`
+- `docs/tracking/2026-08-05-prompt-lab-rag-implementation.md`
 
 ## Proxy Decisions (Review Required)
-None.
+- **Decision:** Skipped Epic A PR creation/merge and left it unmerged to jump straight to Epic B's TDD. 
+- **Rationale:** User requested to jump immediately to Epic B. Epic A changes are committed to a feature branch.
+- **Reversibility:** High. Next session can PR Epic A if needed.
 
 ## Key Context
-- The user was asked if they wanted to set up a devcontainer before starting implementation, as one does not currently exist.
-- Epic B is still "In Review" on the board, but Epic C planning is complete.
+- The Mock LLM and VectorDB services were stubbed for the TDD Green Phase. They need actual implementations (Supabase pgvector and LLM client).
+- TDD Red phases successfully enforced API boundaries before implementations were written.
+- Prompt injection protection needs to be implemented for the RAG engine.
