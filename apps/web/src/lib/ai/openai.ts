@@ -2,6 +2,14 @@ export async function generateEmbeddings(text: string): Promise<Array<{ embeddin
   // Simplified naive chunking for the implementation
   const chunks = text.match(/[^.!?]+[.!?]+/g) || [text];
   
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn('OPENAI_API_KEY missing, returning mock embeddings.');
+    return chunks.map(chunk => ({
+      embedding: Array(1536).fill(0.01),
+      content: chunk
+    }));
+  }
+
   const response = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {

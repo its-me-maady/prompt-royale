@@ -26,9 +26,9 @@ cp <template>/.agents/agents/*.md .agents/agents/
 These define agent personas, responsibilities, and tooling. They don't contain project-specific state.
 
 ### 2. Command definitions
-Copy all `.agents/commands/*.md` from the template to this repo:
+Copy all `.agents/skills/*.md` from the template to this repo:
 ```
-cp <template>/.agents/commands/*.md .agents/commands/
+cp <template>/.agents/skills/*.md .agents/skills/
 ```
 **Exception:** If this repo has project-specific command modifications (e.g., a customized `tdd.md` with project-specific test patterns), note them to the user before overwriting. Check `git diff` after copy to verify.
 
@@ -100,7 +100,7 @@ These are only relevant at project creation and should be skipped:
 After syncing:
 
 1. **Verify agent files:** `ls .agents/agents/` — confirm all agents are present.
-2. **Verify command files:** `ls .agents/commands/` — confirm new commands (sprint-boundary, pin-versions, sync-template) are present.
+2. **Verify command files:** `ls .agents/skills/` — confirm new commands (sprint-boundary, pin-versions, sync-template) are present.
 3. **Verify doc templates:** Check that new directories exist under `docs/`.
 4. **Review AGENTS.md diff:** `git diff AGENTS.md` — verify project-specific content was preserved.
 5. **Commit:** `git add -A && git commit -m "chore: sync vteam-hybrid template evolutions"`

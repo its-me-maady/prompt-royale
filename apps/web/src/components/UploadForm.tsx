@@ -23,6 +23,9 @@ export default function UploadForm() {
     try {
       const res = await fetch('/api/kb/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_SECRET_TOKEN || 'dev-token'}`
+        },
         body: formData,
       });
 
