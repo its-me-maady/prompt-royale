@@ -1,120 +1,121 @@
+/**
+ * agent-notes: { ctx: "Student Prompt Lab UI", deps: [], state: "canonical", last: "sato@2026-08-05" }
+ */
 'use client';
-import { useState } from 'react';
 
-export default function PromptLab() {
-  const [courseId, setCourseId] = useState('');
-  const [query, setQuery] = useState('');
-  const [response, setResponse] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+import React, { useState } from 'react';
 
-  const handleAsk = async () => {
-    setLoading(true);
-    setError('');
-    setResponse('');
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sources?: string[];
+}
+
+export default function PromptLabPage() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: input.trim() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setIsLoading(true);
+
     try {
-      const token = typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('supabase.auth.token') || 'dummy-token' : 'dummy-token';
-      const res = await fetch('/api/lab/chat', {
+      const res = await fetch('/api/rag', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({ courseId, query }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: userMsg.content })
       });
-      if (!res.ok) {
-        let errorMsg = 'Failed to get answer';
-        try {
-          const data = await res.json();
-          errorMsg = data.error || errorMsg;
-        } catch {
-          // If it's not JSON, maybe it's an HTML error page from the server
-          errorMsg = `Server error: ${res.status}`;
-        }
-        setError(errorMsg);
-      } else {
-        const data = await res.json();
-        setResponse(data.response);
-      }
-    } catch (e) {
-      setError('Network error. The AI might be taking a nap.');
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error);
+
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.answer,
+        sources: data.sources
+      }]);
+    } catch (err: any) {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Error: ${err.message}`
+      }]);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center p-8 font-sans text-gray-100 relative overflow-hidden">
-      {/* Background glowing orbs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600 rounded-full mix-blend-screen filter blur-[128px] opacity-30 animate-pulse"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-600 rounded-full mix-blend-screen filter blur-[128px] opacity-30 animate-pulse" style={{ animationDelay: '2s' }}></div>
-
-      <div className="z-10 max-w-3xl w-full mt-12 mb-8 text-center">
-        <h1 className="text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400 drop-shadow-sm">
-          Prompt Lab
-        </h1>
-        <p className="text-lg text-gray-400">Query the master knowledge base and prepare for the Boss Raid.</p>
-      </div>
-
-      <div className="z-10 max-w-3xl w-full bg-gray-900/60 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-gray-800">
-        <div className="mb-6">
-          <label htmlFor="courseId" className="block text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-            Course ID
-          </label>
-          <input
-            id="courseId"
-            type="text"
-            className="w-full bg-gray-800/50 border border-gray-700 text-white rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-            placeholder="e.g. CS101"
-            value={courseId}
-            onChange={(e) => setCourseId(e.target.value)}
-          />
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 p-8 flex flex-col items-center">
+      <div className="w-full max-w-4xl flex-1 flex flex-col bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-800 bg-slate-900/80">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+            Prompt Lab
+          </h1>
+          <p className="text-slate-400 mt-2">Query the Professor's Knowledge Base before the Raid.</p>
         </div>
 
-        <div className="mb-6">
-          <label htmlFor="query" className="block text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-            Your Question
-          </label>
-          <textarea 
-            id="query"
-            className="w-full h-32 p-4 bg-gray-800/50 border border-gray-700 text-white rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-gray-500"
-            placeholder="Ask a synthesis question... e.g., 'Compare the algorithms in Lecture 1 and 4'"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+        {/* Chat Log */}
+        <div className="flex-1 p-6 overflow-y-auto space-y-6">
+          {messages.length === 0 && (
+            <div className="h-full flex items-center justify-center text-slate-500 text-lg">
+              Start by asking a question about the course materials...
+            </div>
+          )}
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] rounded-2xl p-5 shadow-lg ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-bl-none'}`}>
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+                {msg.sources && msg.sources.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-700/50 text-xs text-slate-400">
+                    <strong>Sources:</strong> {msg.sources.join(', ')}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-none p-5 flex space-x-2">
+                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+              </div>
+            </div>
+          )}
         </div>
-        
-        <button 
-          onClick={handleAsk}
-          disabled={loading || !query.trim() || !courseId.trim()}
-          className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold text-lg hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-900/50 transform hover:-translate-y-1"
-        >
-          {loading ? (
-             <span className="flex items-center justify-center">
-               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-               </svg>
-               Synthesizing...
-             </span>
-          ) : 'Ask Knowledge Base'}
-        </button>
 
-        {error && (
-          <div className="mt-6 p-4 bg-red-900/30 border border-red-800/50 rounded-xl text-red-400 text-center">
-            {error}
-          </div>
-        )}
-        
-        {response && (
-          <div className="mt-8 p-6 bg-gray-800/50 rounded-2xl border border-gray-700/50 shadow-inner">
-            <h3 className="text-sm font-semibold text-purple-400 mb-4 uppercase tracking-widest flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-              AI Synthesis
-            </h3>
-            <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{response}</p>
-          </div>
-        )}
+        {/* Input Form */}
+        <div className="p-6 bg-slate-900/80 border-t border-slate-800">
+          <form onSubmit={handleSubmit} className="relative flex items-center">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask a question..."
+              className="w-full bg-slate-950 border border-slate-700 rounded-full py-4 pl-6 pr-16 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-500 shadow-inner"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="absolute right-2 p-3 bg-indigo-600 hover:bg-indigo-500 rounded-full text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+              </svg>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
