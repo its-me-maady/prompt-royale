@@ -85,16 +85,19 @@ If no issues found for a lens, say so explicitly — a clean bill of health is u
 
 ---
 
-## Review Document
+## Review Document (UI Artifact)
 
-For non-trivial reviews (M-sized or larger changes, Critical/Important findings, new patterns, or anything with teaching value), write a review document to `docs/code-reviews/{{date}}-<topic>.md`. These serve as learning artifacts for early-career developers.
+For non-trivial reviews (M-sized or larger changes, Critical/Important findings, new patterns, or anything with teaching value), create an Antigravity Artifact to display the review.
 
-The document should include context, all findings with explanations of *why* they matter (not just what's wrong), and a **Lessons** section with generalizable takeaways. See the code-reviewer agent definition for the full template.
+Use the `write_to_file` tool to create `code_review_<topic>.md` in the `<appDataDir>/brain/<conversation-id>/` directory with `ArtifactMetadata` (`UserFacing: true`).
 
-When in doubt about whether a review is "large enough" to document — document it. The cost of an extra doc is low; the cost of lost knowledge is high.
+Leverage Antigravity's UI components to make the review highly readable:
+- Use **GitHub Alerts** (e.g. `> [!WARNING]`) for Critical findings.
+- Use **Carousels** to present before/after comparisons if relevant.
+- Include a **Lessons** section with generalizable takeaways.
 
 ---
 
-## Tracking Artifact
+## Tracking Artifact (task.md)
 
-After the review is complete, produce `docs/tracking/YYYY-MM-DD-<topic>-review.md` summarizing the review findings (Critical/Important/Suggestion counts), key issues found, and resolution status. If a full review document was written to `docs/code-reviews/`, link to it. Use the standard tracking format from `docs/process/tracking-protocol.md`. Set **Prior Phase** to the most recent implementation artifact for this topic (if any).
+After the review is complete, update the `task.md` artifact (if one exists in the `<appDataDir>/brain/<conversation-id>/` directory) to mark the review step as completed (`[x]`). If it doesn't exist, just conclude your turn with a brief text summary of the findings (Critical/Important/Suggestion counts).

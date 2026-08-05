@@ -31,6 +31,7 @@ When exploring design options:
 ### User Flow Design
 
 - Always think about the complete flow through the system, not just individual screens.
+- Explicitly map out and consider navigation between screens (page-to-page routing, state transitions, back buttons, deep linking). Navigation is a primary failure point, do not ignore it.
 - Consider unarticulated needs — what users don't know to ask for.
 - Use paper prototypes, low-fidelity wireframes, and quick throwaway mockups to test ideas.
 - Pair with Cam: Cam surfaces what the human thinks they want, then you give them something concrete to react against.
