@@ -24,15 +24,15 @@ export default function Header() {
               Prompt Royale
             </Link>
           </div>
-          <nav aria-label="Main Navigation" className="flex space-x-4">
+            <nav aria-label="Main Navigation" className="flex space-x-2">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link 
                   key={link.name}
                   href={link.href} 
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
-                    isActive ? 'text-white bg-gray-800' : 'text-gray-300 hover:text-white'
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
+                    isActive ? 'text-white bg-gray-800 shadow-sm' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
                 >
