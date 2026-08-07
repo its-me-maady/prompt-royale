@@ -26,3 +26,18 @@ BEGIN
     LIMIT 5;
 END;
 $$;
+
+CREATE TABLE IF NOT EXISTS boss_raid_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    boss_hp INTEGER NOT NULL DEFAULT 10000,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS boss_raid_votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES boss_raid_sessions(id),
+    player_id TEXT NOT NULL,
+    vote_type TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
