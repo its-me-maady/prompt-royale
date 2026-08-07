@@ -6,7 +6,7 @@ description: Research and update the cloud service landscape for
 <!-- agent-notes: { ctx: "refresh cloud landscape research files", deps: [docs/research/aws-landscape.md, docs/research/azure-landscape.md, docs/research/gcp-landscape.md], state: active, last: "cloud-architect@2026-02-12" } -->
 Research and update the cloud service landscape for: $ARGUMENTS
 
-This command refreshes the cloud knowledge files that the cloud specialist agents depend on. Run it when you suspect the landscape has changed — new services, pricing changes, deprecated features, or before a major architecture decision.
+This skill refreshes the cloud knowledge files that the cloud specialist agents depend on. Run it when you suspect the landscape has changed — new services, pricing changes, deprecated features, or before a major architecture decision.
 
 **Target cloud:** The argument should be one of `AWS`, `Azure`, or `GCP`. If not specified, ask which cloud to update.
 
@@ -66,4 +66,4 @@ Report:
 - Any new services the team should consider.
 - Any pricing changes that affect existing architecture decisions.
 - Any stale information found in agent prompts (if applicable).
-- When to run this command again (suggest a cadence based on how much changed).
+- When to run this skill again (suggest a cadence based on how much changed).

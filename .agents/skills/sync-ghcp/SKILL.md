@@ -6,11 +6,11 @@ description: Sync the Antigravity agent/persona system to GitHub Copilot format.
 <!-- agent-notes: { ctx: "sync Antigravity agents to GitHub Copilot format", deps: [AGENTS.md, .agents/agents/, .agents/commands/, docs/methodology/personas.md], state: active, last: "diego@2026-02-12" } -->
 Sync the Antigravity agent/persona system to GitHub Copilot format.
 
-This command uses Antigravity as the source of truth and generates/updates the GHCP equivalents in `.github/`. It does NOT use a static generation script — instead it researches the current GHCP format at runtime and adapts accordingly.
+This skill uses Antigravity as the source of truth and generates/updates the GHCP equivalents in `.github/`. It does NOT use a static generation script — instead it researches the current GHCP format at runtime and adapts accordingly.
 
-## Why a Command Instead of a Script
+## Why a Skill Instead of a Script
 
-Both Antigravity and GHCP are actively evolving their agent/customization formats. A static script encodes today's format assumptions and rots silently. This command brings the model's current knowledge of both platforms to every run and can web-search for the latest specs, making it resilient to format changes on either side.
+Both Antigravity and GHCP are actively evolving their agent/customization formats. A static script encodes today's format assumptions and rots silently. This skill brings the model's current knowledge of both platforms to every run and can web-search for the latest specs, making it resilient to format changes on either side.
 
 ## Process
 
@@ -20,7 +20,7 @@ Read all files that define the agent/persona system:
 
 - `AGENTS.md` — project instructions and persona triggers
 - `.agents/agents/*.md` — all subagent definitions (frontmatter + body)
-- `.agents/commands/*.md` — all custom commands
+- `.agents/skills/*/*.md` — all custom skills
 - `docs/methodology/personas.md` — shared persona catalog
 
 Take note of each agent's name, description, tool permissions (both allowed and disallowed), model preference, max turns, and the full body content that defines their behavior.
@@ -60,13 +60,13 @@ For each `.agents/agents/*.md` file, create or update the corresponding `.github
 - Drop `maxTurns` if GHCP has no equivalent, or map it if they've added one.
 - Keep the body content largely intact, but update Antigravity-specific references to GHCP equivalents.
 
-### 5. Convert Command Files
+### 5. Convert Skill Files
 
-For each `.agents/commands/*.md` file, create or update the corresponding `.github/prompts/*.prompt.md` file:
+For each `.agents/skills/*/*.md` file, create or update the corresponding `.github/prompts/*.prompt.md` file:
 
 - Add GHCP prompt file frontmatter (`mode`, `description`, `tools`, `model`).
 - Translate `$ARGUMENTS` to whatever GHCP uses for prompt arguments.
-- Update internal references to other commands and agents to use GHCP paths/syntax.
+- Update internal references to other skills and agents to use GHCP paths/syntax.
 
 ### 6. Generate copilot-instructions.md
 
@@ -74,7 +74,7 @@ Create or update `.github/copilot-instructions.md` based on `AGENTS.md`:
 
 - Adapt the project overview, development philosophy, and workflow sections.
 - Translate the persona trigger table to reference GHCP agents and invocation patterns.
-- Update subagent and command paths.
+- Update subagent and skill paths.
 - Keep `docs/` references unchanged — those are shared.
 
 ### 7. Verify Consistency
@@ -82,7 +82,7 @@ Create or update `.github/copilot-instructions.md` based on `AGENTS.md`:
 After generating all files, do a quick consistency check:
 
 - Every `.agents/agents/*.md` file has a corresponding `.github/agents/*.agent.md` file.
-- Every `.agents/commands/*.md` file has a corresponding `.github/prompts/*.prompt.md` file (except this `sync-ghcp.md` command itself — it's Antigravity-only).
+- Every `.agents/skills/*/*.md` file has a corresponding `.github/prompts/*.prompt.md` file (except this `sync-ghcp.md` skill itself — it's Antigravity-only).
 - No GHCP files reference Antigravity-specific concepts.
 - The tool names in GHCP agent files are valid GHCP tool identifiers.
 

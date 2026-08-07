@@ -6,7 +6,7 @@ description: Set up a devcontainer for this project
 <!-- agent-notes: { ctx: "devcontainer setup for any stack", deps: [AGENTS.md], state: active, last: "ines@2026-02-12" } -->
 Set up a devcontainer for this project: $ARGUMENTS
 
-You are configuring a development container so this project can be developed in a consistent, reproducible environment. This command is typically run AFTER the tech stack has been chosen (via scaffolding or manual setup).
+You are configuring a development container so this project can be developed in a consistent, reproducible environment. This skill is typically run AFTER the tech stack has been chosen (via scaffolding or manual setup).
 
 ## 1. Detect the Current Stack
 

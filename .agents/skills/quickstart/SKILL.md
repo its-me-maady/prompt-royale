@@ -3,7 +3,7 @@ name: quickstart
 description: Quick-start this project
 ---
 
-<!-- agent-notes: { ctx: "fast 5-min onboarding, skips full kickoff ceremony", deps: [AGENTS.md, .agents/commands/kickoff.md, docs/methodology/personas.md], state: active, last: "pat@2026-03-21" } -->
+<!-- agent-notes: { ctx: "fast 5-min onboarding, skips full kickoff ceremony", deps: [AGENTS.md, .agents/skills/kickoff/SKILL.md, docs/methodology/personas.md], state: active, last: "pat@2026-03-21" } -->
 Quick-start this project: $ARGUMENTS
 
 This is the fast path — get from template to working code in ~5 minutes. Use `/kickoff` instead if you want full discovery with architecture debate, sacrificial concepts, and board setup.
@@ -20,7 +20,7 @@ if [ -f README-template.md ]; then
   mv README-template.md README.md
 fi
 
-# Move stub docs from scaffolds/ to docs/ root (if not already done by a scaffold command)
+# Move stub docs from scaffolds/ to docs/ root (if not already done by a scaffold skill)
 if [ -d docs/scaffolds ] && [ "$(ls -A docs/scaffolds/*.md 2>/dev/null)" ]; then
   mv docs/scaffolds/*.md docs/ 2>/dev/null
   rmdir docs/scaffolds 2>/dev/null
@@ -98,7 +98,7 @@ This is the moment the user sees the system work. Don't delay it with more plann
 | Phase 1b (Human Model) | Captures your product philosophy | Run `/kickoff` Phase 1b standalone, or Pat learns organically over time |
 | Phase 2 (Sacrificial Concepts) | Explores alternative approaches | Run `/design` before any major feature |
 | Architecture Gate | Archie proposes + Wei challenges | Run `/adr` when you face a significant technical choice |
-| GitHub Projects board | Sprint tracking with status columns | Ask Claude to set up a board (Grace handles this), or see `docs/integrations/README.md` |
+| GitHub Projects board | Sprint tracking with status columns | Ask Antigravity to set up a board (Grace handles this), or see `docs/integrations/README.md` |
 | Threat model | Security analysis | Pierrot creates one during first `/code-review` |
 | Test strategy | Testing approach doc | Tara creates one organically during TDD |
 

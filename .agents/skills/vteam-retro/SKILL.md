@@ -21,7 +21,7 @@ Then take these actions:
 ### Document the retro
 - Create a retrospective file at `docs/retrospectives/{{date}}-<topic>.md` summarizing the reflection. Add agent-notes frontmatter per `docs/methodology/agent-notes.md`.
 - Update `AGENTS.md` with any new patterns, conventions, or lessons learned.
-- Create or update custom commands in `.agents/commands/` if a repeatable workflow emerged during this session.
+- Create or update custom skills in `.agents/skills/` if a repeatable workflow emerged during this session.
 - If any architectural decisions were made implicitly, capture them as ADRs in `docs/adrs/`.
 
 ### Create GitHub issues for every identified problem (MANDATORY)
@@ -41,5 +41,5 @@ For **each** problem, friction point, or process failure identified in the retro
 
 If a problem identified in this retro was **also** identified in a previous retro (check `docs/retrospectives/` for past entries), this is a red flag:
 - The previous fix was insufficient. Note this explicitly in the issue body.
-- Consider whether the fix needs to be more structural (e.g., adding a checklist, a gate, or a command) rather than just a note in AGENTS.md.
+- Consider whether the fix needs to be more structural (e.g., adding a checklist, a gate, or a skill) rather than just a note in AGENTS.md.
 - Label these issues with both `process-improvement` and `recurring` (`gh label create "recurring" --description "Issue that has recurred across sprints" --color "b60205" --force`).

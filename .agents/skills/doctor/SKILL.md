@@ -1,10 +1,10 @@
 ---
 name: doctor
-description: Run a health check on the vteam-hybrid project setup. This command is **read-only** — it inspects but never modifies files, config, or state.
+description: Run a health check on the vteam-hybrid project setup. This skill is **read-only** — it inspects but never modifies files, config, or state.
 ---
 
-<!-- agent-notes: { ctx: "read-only project health check, 8 diagnostics", deps: [AGENTS.md, .agents/agents/, .agents/commands/, docs/methodology/agent-notes.md], state: active, last: "sato@2026-03-21" } -->
-Run a health check on the vteam-hybrid project setup. This command is **read-only** — it inspects but never modifies files, config, or state.
+<!-- agent-notes: { ctx: "read-only project health check, 8 diagnostics", deps: [AGENTS.md, .agents/agents/, .agents/skills/, docs/methodology/agent-notes.md], state: active, last: "sato@2026-03-21" } -->
+Run a health check on the vteam-hybrid project setup. This skill is **read-only** — it inspects but never modifies files, config, or state.
 
 ---
 
@@ -39,16 +39,16 @@ ls .agents/agents/*.md 2>/dev/null
 
 ---
 
-## Check 2: Command Files
+## Check 2: Skill Files
 
-Verify that all expected command files exist in `.agents/commands/`.
+Verify that all expected skill files exist in `.agents/skills/`.
 
 Expected files (27):
 `adr.md`, `aws-review.md`, `azure-review.md`, `cloud-update.md`, `code-review.md`, `design.md`, `devcontainer.md`, `doctor.md`, `gcp-review.md`, `handoff.md`, `kickoff.md`, `pin-versions.md`, `plan.md`, `quickstart.md`, `restack.md`, `resume.md`, `retro.md`, `review.md`, `scaffold-ai-tool.md`, `scaffold-cli.md`, `scaffold-static-site.md`, `scaffold-web-monorepo.md`, `sprint-boundary.md`, `sync-ghcp.md`, `sync-template.md`, `tdd.md`, `whatsit.md`
 
 ```bash
-# List .agents/commands/*.md and compare against expected list
-ls .agents/commands/*.md 2>/dev/null
+# List .agents/skills/*.md and compare against expected list
+ls .agents/skills/*.md 2>/dev/null
 ```
 
 - PASS if all 27 are present.
@@ -83,7 +83,7 @@ ls docs/scaffolds/*.md 2>/dev/null
 
 - PASS if `docs/scaffolds/` does not exist or is empty (stubs have been deployed).
 - WARN if `docs/scaffolds/` still contains `.md` files. List the files.
-  - Suggest: "Run a `/scaffold-*` command or `/kickoff` to deploy stub docs."
+  - Suggest: "Run a `/scaffold-*` skill or `/kickoff` to deploy stub docs."
 
 ---
 
@@ -152,7 +152,7 @@ Spot-check a sample of source files for agent-notes metadata. This is a heuristi
 
 **Which files to check:** Sample up to 10 files from these locations (skip if a location does not exist):
 - `.agents/agents/*.md` (pick 3)
-- `.agents/commands/*.md` (pick 3)
+- `.agents/skills/*.md` (pick 3)
 - `scripts/*.sh` or `scripts/*.py` (pick 2 if they exist)
 - `src/**/*.ts` or `src/**/*.py` or `src/**/*.rs` (pick 2 if they exist)
 
