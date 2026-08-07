@@ -11,6 +11,7 @@ import { BossHealthBar } from "../../components/arena/BossHealthBar";
 import { PlayerHealthBar } from "../../components/arena/PlayerHealthBar";
 import { VotingOptions } from "../../components/arena/VotingOptions";
 import { PhaseIndicator } from "../../components/arena/PhaseIndicator";
+import { ReviveModal } from "../../components/ReviveModal";
 
 const SQUAD_ID = "test-squad-1"; // Hardcoded for MVP
 
@@ -351,44 +352,49 @@ export default function BossRaidArena() {
           </div>
         )}
 
-        {(gameState.status === "active" || gameState.status === "revive") &&
-          question &&
-          !fetchError && (
-            <>
-              <PhaseIndicator
-                status={gameState.status as "active" | "revive"}
-                timeLeft={timeLeft}
-              />
+        {gameState.status === "active" && question && !fetchError && (
+          <>
+            <PhaseIndicator
+              status={gameState.status as "active" | "revive"}
+              timeLeft={timeLeft}
+            />
 
-              <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-800/80 p-8 rounded-3xl shadow-2xl mb-8 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50" />
-                <h1 className="text-2xl md:text-3xl font-semibold leading-relaxed text-gray-100 text-center max-w-3xl mx-auto">
-                  {question.question}
-                </h1>
-              </div>
+            <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-800/80 p-8 rounded-3xl shadow-2xl mb-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50" />
+              <h1 className="text-2xl md:text-3xl font-semibold leading-relaxed text-gray-100 text-center max-w-3xl mx-auto">
+                {question.question}
+              </h1>
+            </div>
 
-              <VotingOptions
-                options={question.options}
-                myVote={myVote}
-                onVote={handleVote}
-                disabled={
-                  gameState?.status !== "active" &&
-                  gameState?.status !== "revive"
-                }
-              />
+            <VotingOptions
+              options={question.options}
+              myVote={myVote}
+              onVote={handleVote}
+              disabled={gameState?.status !== "active"}
+            />
 
-              <div className="mt-8 flex justify-center items-center gap-3">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-gray-800" />
-                <span className="text-sm font-medium text-gray-500 bg-gray-900/80 px-4 py-1.5 rounded-full border border-gray-800/50">
-                  {votes.length} /{" "}
-                  {gameState.players.filter((p) => p.status === "alive")
-                    .length || 1}{" "}
-                  votes locked in
-                </span>
-                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-gray-800" />
-              </div>
-            </>
-          )}
+            <div className="mt-8 flex justify-center items-center gap-3">
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-gray-800" />
+              <span className="text-sm font-medium text-gray-500 bg-gray-900/80 px-4 py-1.5 rounded-full border border-gray-800/50">
+                {votes.length} /{" "}
+                {gameState.players.filter((p) => p.status === "alive").length || 1}{" "}
+                votes locked in
+              </span>
+              <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-gray-800" />
+            </div>
+          </>
+        )}
+
+        {gameState.status === "revive" && question && !fetchError && (
+          <ReviveModal 
+            question={question}
+            timeLeft={timeLeft}
+            myVote={myVote}
+            onVote={handleVote}
+            votesCount={votes.length}
+            totalPlayers={gameState.players.filter((p) => p.status === "alive").length || 1}
+          />
+        )}
       </main>
     </div>
   );
