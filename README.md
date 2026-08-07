@@ -8,6 +8,17 @@ A gamified AI study and quiz arena.
 - Turborepo
 - pnpm
 
+## Development Environment
+
+This project is configured with a **Devcontainer** for a consistent and reproducible local development environment. It comes pre-installed with Node.js 22, pnpm, Docker (for running Supabase locally), and the Supabase CLI.
+
+**To get started:**
+1. Open this project in VS Code.
+2. When prompted, click **"Reopen in Container"** (or press `F1` and run `Dev Containers: Reopen in Container`).
+3. The container will automatically install all dependencies (`pnpm install`) and extensions (Prettier, ESLint, Tailwind).
+
+If you are not using Devcontainers, follow the manual steps below.
+
 ## Getting Started
 
 1. Install dependencies:

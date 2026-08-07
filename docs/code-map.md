@@ -37,6 +37,9 @@ core ────── (no deps — foundational types)
 
 ## Package / Module Summaries
 
+### `.devcontainer/` — Development Environment
+**Purpose:** Defines a reproducible, containerized local development environment for the project. Contains `devcontainer.json` which orchestrates Docker-in-Docker, Node.js tools, and VS Code extensions.
+
 <!-- For each package or major module, document:
 ### @scope/package-name — Short Description
 

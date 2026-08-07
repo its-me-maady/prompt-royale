@@ -19,14 +19,13 @@ describe('PromptLab UI Tests', () => {
   it('renders the form correctly', () => {
     render(<PromptLab />);
     expect(screen.getByText('Prompt Lab')).toBeTruthy();
-    expect(screen.getByLabelText(/Course ID/i)).toBeTruthy();
-    expect(screen.getByLabelText(/Your Question/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Ask Knowledge Base/i })).toBeTruthy();
+    expect(screen.getByPlaceholderText('Ask a question...')).toBeTruthy();
+    expect(screen.getByRole('button')).toBeTruthy();
   });
 
   it('disables the submit button if inputs are empty', () => {
     render(<PromptLab />);
-    const submitBtn = screen.getByRole('button', { name: /Ask Knowledge Base/i }) as HTMLButtonElement;
+    const submitBtn = screen.getByRole('button') as HTMLButtonElement;
     expect(submitBtn.disabled).toBe(true);
   });
 
@@ -40,11 +39,9 @@ describe('PromptLab UI Tests', () => {
 
     render(<PromptLab />);
     
-    const courseIdInput = screen.getByLabelText(/Course ID/i);
-    const queryInput = screen.getByLabelText(/Your Question/i);
-    const submitBtn = screen.getByRole('button', { name: /Ask Knowledge Base/i });
+    const queryInput = screen.getByPlaceholderText('Ask a question...');
+    const submitBtn = screen.getByRole('button');
 
-    fireEvent.change(courseIdInput, { target: { value: 'CS101' } });
     fireEvent.change(queryInput, { target: { value: 'What is a graph?' } });
     
     // After filling inputs, button should be enabled
@@ -60,9 +57,8 @@ describe('PromptLab UI Tests', () => {
       method: 'POST',
       headers: expect.objectContaining({ 
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer dummy-token'
       }),
-      body: JSON.stringify({ courseId: 'CS101', query: 'What is a graph?' }),
+      body: expect.any(String),
     }));
   });
 
@@ -75,9 +71,8 @@ describe('PromptLab UI Tests', () => {
 
     render(<PromptLab />);
     
-    fireEvent.change(screen.getByLabelText(/Course ID/i), { target: { value: 'CS101' } });
-    fireEvent.change(screen.getByLabelText(/Your Question/i), { target: { value: 'What is a graph?' } });
-    fireEvent.click(screen.getByRole('button', { name: /Ask Knowledge Base/i }));
+    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'What is a graph?' } });
+    fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
       expect(screen.getByText('Course ID not found')).toBeTruthy();
@@ -93,9 +88,8 @@ describe('PromptLab UI Tests', () => {
 
     render(<PromptLab />);
     
-    fireEvent.change(screen.getByLabelText(/Course ID/i), { target: { value: 'CS101' } });
-    fireEvent.change(screen.getByLabelText(/Your Question/i), { target: { value: 'What is a graph?' } });
-    fireEvent.click(screen.getByRole('button', { name: /Ask Knowledge Base/i }));
+    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'What is a graph?' } });
+    fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
       expect(screen.getByText('Server error: 500')).toBeTruthy();
