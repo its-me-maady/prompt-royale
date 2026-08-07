@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { GameState, calculateRoundResults, processRevive, PlayerVote } from '../../engine/game-logic';
 import { supabaseClient } from '../../lib/db/supabase-client';
+import { ReviveModal } from '../../components/ReviveModal';
 
 const SQUAD_ID = 'test-squad-1'; // Hardcoded for MVP
 
@@ -276,11 +277,11 @@ export default function BossRaidArena() {
           </div>
         )}
 
-        {(gameState.status === 'active' || gameState.status === 'revive') && question && !fetchError && (
+        {gameState.status === 'active' && question && !fetchError && (
           <>
             <div className="flex justify-between items-center mb-8">
-              <span className={`text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-full ${gameState.status === 'revive' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : 'bg-blue-500/20 text-blue-400 border border-blue-500/50'}`}>
-                {gameState.status === 'revive' ? 'HARD MODE: REVIVE' : 'BATTLE PHASE'}
+              <span className="text-sm font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/50">
+                BATTLE PHASE
               </span>
               <span className={`text-2xl font-mono font-bold ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
                 00:{timeLeft.toString().padStart(2, '0')}
@@ -317,6 +318,17 @@ export default function BossRaidArena() {
                {votes.length} / {gameState.players.filter(p => p.status === 'alive').length || 1} votes locked in
             </div>
           </>
+        )}
+        
+        {gameState.status === 'revive' && question && !fetchError && (
+          <ReviveModal 
+            question={question}
+            timeLeft={timeLeft}
+            myVote={myVote}
+            onVote={handleVote}
+            votesCount={votes.length}
+            totalPlayers={gameState.players.filter(p => p.status === 'alive').length || 1}
+          />
         )}
       </main>
     </div>
