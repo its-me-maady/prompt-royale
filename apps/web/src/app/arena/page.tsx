@@ -32,7 +32,26 @@ export default function BossRaidArena() {
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
-    setPlayerId(`p${Math.floor(Math.random() * 10000)}`);
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+          const { data, error } = await supabaseClient.auth.signInAnonymously();
+          if (error) console.error("Anonymous login error:", error);
+          if (data?.user) {
+            setPlayerId(data.user.id.substring(0, 8));
+            return;
+          }
+        } else {
+          setPlayerId(session.user.id.substring(0, 8));
+          return;
+        }
+      } catch (err) {
+        console.error("Auth init error:", err);
+      }
+      setPlayerId(`p${Math.floor(Math.random() * 10000)}`);
+    };
+    initAuth();
   }, []);
 
   // Initialize game state and channel
