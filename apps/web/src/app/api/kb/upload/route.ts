@@ -12,6 +12,13 @@ const metadataSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const authHeader = req.headers.get('authorization');
+    const token = process.env.NEXT_PUBLIC_API_SECRET_TOKEN || 'dev-token';
+    
+    if (!authHeader || authHeader !== `Bearer ${token}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const file = formData.get('file') as Blob | null;
     const metadataRaw = formData.get('metadata') as string | null;
