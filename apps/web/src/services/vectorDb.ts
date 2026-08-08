@@ -29,18 +29,23 @@ export const vectorDb = {
     match_count: number = 5,
     filter: Record<string, any> = {}
   ): Promise<any[]> => {
-    const { data, error } = await supabaseClient
-      .rpc('match_knowledge_base', {
-        query_embedding,
-        match_threshold,
-        match_count,
-        filter
-      });
+    try {
+      const { data, error } = await supabaseClient
+        .rpc('match_knowledge_base', {
+          query_embedding,
+          match_threshold,
+          match_count,
+          filter
+        });
 
-    if (error) {
-      console.error('Error searching vectors:', error);
+      if (error) {
+        console.warn('Vector search warning:', error.message || error);
+        return [];
+      }
+      return data || [];
+    } catch (err: any) {
+      console.warn('[Dev Mode] Database offline (127.0.0.1:54321) - returning empty vector context.');
       return [];
     }
-    return data || [];
   }
 };
