@@ -3,9 +3,9 @@ export async function generateEmbeddings(text: string): Promise<Array<{ embeddin
   const chunks = text.match(/[^.!?]+[.!?]+/g) || [text];
   
   if (!process.env.OPENAI_API_KEY) {
-    console.warn('OPENAI_API_KEY missing, returning mock embeddings.');
+    console.warn('OPENAI_API_KEY missing, returning 768-dim mock embeddings.');
     return chunks.map(chunk => ({
-      embedding: Array(1536).fill(0.01),
+      embedding: Array(768).fill(0.01),
       content: chunk
     }));
   }

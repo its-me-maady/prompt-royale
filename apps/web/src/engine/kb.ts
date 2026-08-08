@@ -61,9 +61,10 @@ export const processDocument = async (fileUrl: string): Promise<string[]> => {
 export const generateAndStoreEmbeddings = async (documentId: string, chunks: string[]): Promise<boolean> => {
   try {
     const embeddings = await embeddingApi.createEmbeddings(chunks);
-    const records: VectorRecord[] = chunks.map((_, index) => ({
+    const records: VectorRecord[] = chunks.map((chunk, index) => ({
       id: `${documentId}-${index}`,
-      vector: embeddings[index]
+      content: chunk,
+      embedding: embeddings[index]
     }));
     return await vectorDb.upsert(records);
   } catch (error) {

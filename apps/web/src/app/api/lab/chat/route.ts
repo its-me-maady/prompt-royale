@@ -5,8 +5,8 @@ import { supabase } from '@/lib/db/supabase';
 import { z } from 'zod';
 
 const chatSchema = z.object({
-  query: z.string({ required_error: 'Missing query', invalid_type_error: 'Missing query' }).min(1, 'Missing query'),
-  courseId: z.string({ required_error: 'Missing courseId', invalid_type_error: 'Missing courseId' }).min(1, 'Missing courseId'),
+  query: z.string({ message: 'Missing query' }).min(1, 'Missing query'),
+  courseId: z.string({ message: 'Missing courseId' }).min(1, 'Missing courseId'),
 });
 
 export async function POST(req: NextRequest) {
@@ -37,14 +37,19 @@ export async function POST(req: NextRequest) {
 
     // 2. Retrieval using expanded query text
     const query_text = expandedQueries.length > 0 ? expandedQueries.join(' ') : query;
-    const { data: chunks, error } = await supabase.rpc('match_knowledge_base', {
-      query_text,
-      filter: { courseId },
-    });
-
-    if (error || !chunks) {
-      console.error('Supabase retrieval failed', error);
-      return NextResponse.json({ error: 'Retrieval failed' }, { status: 500 });
+    let chunks: any[] = [];
+    try {
+      const { data, error } = await supabase.rpc('match_knowledge_base', {
+        query_text,
+        filter: { courseId },
+      });
+      if (!error && data) {
+        chunks = data;
+      } else {
+        console.warn('Supabase retrieval warning:', error?.message || 'No chunks returned');
+      }
+    } catch (dbErr: any) {
+      console.warn('Supabase offline or RPC failed, proceeding with empty context:', dbErr.message || dbErr);
     }
 
     // 3. Synthesis Generation

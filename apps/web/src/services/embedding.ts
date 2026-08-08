@@ -15,26 +15,39 @@ export const embeddingApi = {
     const results: number[][] = [];
     
     for (const chunk of chunks) {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'models/text-embedding-004',
-          content: { parts: [{ text: chunk }] }
-        })
-      });
+      let embedding: number[] | null = null;
       
-      if (!response.ok) {
-        console.error('Failed to generate embedding', await response.text());
-        results.push(new Array(768).fill(0));
-      } else {
-        const data = await response.json();
-        const embedding = data.embedding?.values;
-        if (embedding) {
-          results.push(embedding);
-        } else {
-          results.push(new Array(768).fill(0));
+      // Try text-embedding-004 first, then gemini-embedding-001
+      const modelsToTry = ['text-embedding-004', 'gemini-embedding-001'];
+      
+      for (const model of modelsToTry) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent?key=${process.env.GEMINI_API_KEY}`;
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: { parts: [{ text: chunk }] }
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.embedding?.values) {
+              embedding = data.embedding.values;
+              break;
+            }
+          }
+        } catch (e) {
+          // ignore and try next model
         }
+      }
+
+      if (embedding) {
+        results.push(embedding);
+      } else {
+        console.warn('Embedding API unavailable, returning 768-dim fallback stub vector.');
+        results.push(new Array(768).fill(0.1));
       }
     }
     

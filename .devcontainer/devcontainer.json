@@ -1,11 +1,11 @@
 {
   "name": "PromptRoyale",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22-bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
       "version": "latest",
-      "enableNonRootDocker": "true",
-      "moby": "true"
+      "moby": "false",
+      "enableNonRootDocker": "true"
     },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"

@@ -25,9 +25,8 @@ export default function Lobby() {
     }
   };
 
-  // Basic XSS prevention for the invite link
   const isSafeLink = lobbyData?.inviteLink?.startsWith('http://') || lobbyData?.inviteLink?.startsWith('https://');
-  const safeInviteLink = isSafeLink ? lobbyData.inviteLink : '#';
+  const safeInviteLink = (isSafeLink && lobbyData) ? lobbyData.inviteLink : '#';
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-8 font-sans text-gray-100 relative overflow-hidden">
