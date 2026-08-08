@@ -1,39 +1,52 @@
-<!-- agent-notes: { ctx: "Session handoff doc", deps: [AGENTS.md], state: active, last: "pat@2026-08-07" } -->
+---
+agent-notes:
+  ctx: "session handoff for wave-based sprint execution"
+  deps: ["AGENTS.md", "docs/code-map.md"]
+  state: "active"
+  last: "antigravity@2026-08-08"
+---
+
 # Session Handoff
 
-**Created:** 2026-08-07
+**Created:** 2026-08-08
 **Sprint:** 1
-**Wave:** UI/UX Polish & Template Sync
-**Session summary:** Synced agent templates, executed parallel UI/UX overhaul, and cleaned up demo branches.
+**Wave:** Epic C Implementation
+**Session summary:** Completed integration and stabilization of Epic C (Boss Raid Arena Gamification) and established the Devcontainer local environment.
 
 ## What Was Done
-- Synced `vteam-hybrid` template evolutions (added `orchestrator` agent and `vteam-swarm` skill) to `main`.
-- Used the Orchestrator to spawn Dani and Sato to execute a parallel UI/UX overhaul.
-- Merged PR #14 (Design System foundations) and PR #13 (React UI components) into `main`.
-- Fixed missing `tailwindcss-animate` dependency and ran `pnpm install`.
-- Verified premium Dark Mode aesthetic.
-- Deleted the temporary `demo-no-security` branch and checked out `main`.
+- **Devcontainer:** Added a `.devcontainer` configuration supporting Node.js 22, pnpm, and Docker-in-Docker to run the local Supabase stack.
+- **Integration (Epic C):** Merged the three Swarm branches (Swarm 1 test/backend, Swarm 2 UI, Swarm 3 AI Revive) into `main` and resolved git conflicts in `apps/web/src/app/arena/page.tsx`.
+- **Bugfixes:** Fixed a JSON parsing bug in `apps/web/src/services/llm.ts` to properly strip markdown blocks from LLM outputs. Fixed obsolete query assertions in `PromptLab.test.tsx`.
+- **Documentation:** Added `.devcontainer` to `docs/code-map.md` and updated the Dev environment section in `README.md`.
+- **Status:** All TDD tests are passing on `main`.
 
 ## Current State
 - **Branch:** `main`
-- **Last commit:** `e5d2043 Merge pull request #13 from its-me-maady/sato/ui-components`
-- **Uncommitted changes:** `package-lock.json` and `pnpm-lock.yaml` (due to fixing `tailwindcss-animate` install).
-- **Board status:** Epic A (Professor KB), Epic 1, Epic 2, Epic 3 marked Done. Epic B (Prompt Lab) In Review. Epic C (Boss Raid) has active UI/UX improvements.
+- **Last commit:** `9cecbdc chore: set up devcontainer configuration`
+- **Uncommitted changes:** A few temporary untracked `.devcontainer/` files (can be ignored). Working tree is clean.
+- **Tests:** All tests passing.
+- **Board status:** 
+  - Epic 1, 2, 3, A are Done. 
+  - Epic B is In Review. 
+  - Epic C (Boss Raid Arena Gamification) is finished locally, but the board issue (#6) is un-statused and needs to be moved to In Review / Done.
 
 ## Sprint Progress
-- **Current focus:** Boss Raid Gamification (Epic C) and UI polish.
-- **Issues completed this session:** PR #13, PR #14 (UI/UX)
+- **Wave plan:** `docs/tracking/2026-07-31-epic-c-boss-raid-plan.md`
+- **Current wave:** Epic C — implementation is complete on `main`.
+- **Issues completed this session:** Epic C integration (#6)
+- **Next wave:** Depends on board priorities. Epic C should be moved to Review/Done.
 
 ## What To Do Next (in order)
 1. Read `docs/code-map.md` to orient.
-2. Commit the uncommitted lockfile changes (`apps/web/package-lock.json` and `pnpm-lock.yaml`).
-3. Check `docs/tracking/2026-07-31-epic-c-boss-raid-plan.md` to see what is remaining for Epic C.
-4. Continue implementing any remaining requirements for Epic C or ask the user what epic they would like to tackle next.
+2. Read `docs/product-context.md` (last updated July 29) for human's product philosophy.
+3. Review the board status (`gh project item-list 3 --owner its-me-maady`) and move Epic C (#6) to "In Review" or "Done".
+4. E2E test Epic C manually or via playwright if required, or review next epics in the backlog.
 
 ## Tracking Artifacts
 - `docs/tracking/2026-07-31-epic-c-boss-raid-plan.md`
-- `docs/code-reviews/2026-08-05-boss-raid-gamification.md`
+- `docs/tracking/2026-08-04-boss-raid-game-state-debate.md`
 
 ## Key Context
-- The `vteam-swarm` skill and `orchestrator` agent were successfully tested to execute parallel branches and pull requests.
-- Next.js development server may require clearing `.next` cache and a full restart if Tailwind config plugins are added without `pnpm install`.
+- `apps/web/src/app/arena/page.tsx` was heavily contested by Swarm branches but is now resolved.
+- Devcontainer uses Node 22 because `pnpm` latest requires it; if any other services fail locally, check Node version compatibility.
+- Ensure the user tests the AI Revive modal integration manually to confirm the cinematic UI flows properly.
