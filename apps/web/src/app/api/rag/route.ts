@@ -1,25 +1,82 @@
 /**
- * agent-notes: { ctx: "API route for RAG querying", deps: ["apps/web/src/engine/rag.ts"], state: "canonical", last: "sato@2026-08-05" }
+ * agent-notes: { ctx: "API route for RAG querying", deps: ["apps/web/src/engine/rag.ts", "apps/web/src/services/embedding.ts", "apps/web/src/services/vectorDb.ts"], state: "canonical", last: "sato@2026-08-08" }
  */
 import { NextResponse } from 'next/server';
 import { processRagQuery } from '../../../engine/rag';
+import { embeddingApi } from '../../../services/embedding';
+import { vectorDb } from '../../../services/vectorDb';
 
-// We need to implement the dummy deps for now since real services aren't fully integrated yet
-const dummyDeps = {
-  retrieveEmbeddings: async (query: string) => [
-    { id: 'doc-123', content: 'This is a mock knowledge base response. In production, this would query pgvector.', score: 0.99 }
-  ],
+const realDeps = {
+  retrieveEmbeddings: async (query: string) => {
+    const embeddings = await embeddingApi.createEmbeddings([query]);
+    if (!embeddings || embeddings.length === 0) return [];
+    
+    const results = await vectorDb.search(embeddings[0], 0.5, 5);
+    
+    return results.map((row: any) => ({
+      id: row.id,
+      content: row.content,
+      score: row.similarity
+    }));
+  },
   generateLlmResponse: async (prompt: string) => {
-    // Simulate LLM delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return `This is a mock LLM response generated for the query.\n\n### Extracted Context\nBased on the uploaded syllabus, the midterm is on October 15th.`;
+    if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
+      return `[Mock Response] Here is a synthesized response for your query.\n\n${prompt}`;
+    }
+
+    const isGemini = !!process.env.GEMINI_API_KEY;
+    const url = isGemini 
+      ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
+      : 'https://api.groq.com/openai/v1/chat/completions';
+
+    const systemPrompt = "You are a helpful teaching assistant answering a student's question based on the provided context. If the context does not contain the answer, say you don't know.";
+
+    try {
+      let response;
+      if (isGemini) {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: { text: systemPrompt } },
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        });
+      } else {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'llama3-8b-8192',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt }
+            ]
+          })
+        });
+      }
+
+      if (!response.ok) throw new Error('Failed to generate response');
+      const data = await response.json();
+      
+      if (isGemini) {
+        return data.candidates[0].content.parts[0].text;
+      }
+      return data.choices[0].message.content;
+    } catch (e) {
+      console.error("LLM Generation error", e);
+      return "[Fallback] An error occurred while generating the response.";
+    }
   }
 };
 
 export async function POST(req: Request) {
   try {
     const { query } = await req.json();
-    const result = await processRagQuery(query, dummyDeps, { maxContextLength: 2000 });
+    const result = await processRagQuery(query, realDeps, { maxContextLength: 4000 });
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
