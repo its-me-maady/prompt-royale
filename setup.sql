@@ -9,20 +9,29 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
 );
 
 CREATE OR REPLACE FUNCTION match_knowledge_base(
-    query_text text,
+    query_embedding vector(1536),
+    match_threshold float DEFAULT 0.0,
+    match_count int DEFAULT 5,
     filter jsonb DEFAULT '{}'
 ) RETURNS TABLE (
     id uuid,
     content text,
-    metadata jsonb
+    metadata jsonb,
+    similarity float
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT kb.id, kb.content, kb.metadata
+    SELECT
+        kb.id,
+        kb.content,
+        kb.metadata,
+        1 - (kb.embedding <=> query_embedding) AS similarity
     FROM knowledge_base kb
-    WHERE filter = '{}'::jsonb OR kb.metadata @> filter
-    LIMIT 5;
+    WHERE (filter = '{}'::jsonb OR kb.metadata @> filter)
+      AND 1 - (kb.embedding <=> query_embedding) > match_threshold
+    ORDER BY kb.embedding <=> query_embedding
+    LIMIT match_count;
 END;
 $$;
