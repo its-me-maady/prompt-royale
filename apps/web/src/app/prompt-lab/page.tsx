@@ -3,13 +3,24 @@
  */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabaseClient } from '../../lib/db/supabase-client';
 
 export default function PromptLabPage() {
   const [prompt, setPrompt] = useState('');
   const [context, setContext] = useState<string[]>([]);
   const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        await supabaseClient.auth.signInAnonymously();
+      }
+    };
+    initAuth();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
