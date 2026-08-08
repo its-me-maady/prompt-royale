@@ -48,15 +48,27 @@ Output strictly in JSON format exactly like this:
 
     let response;
     if (isGemini) {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: { text: systemPrompt } },
-          contents: [{ parts: [{ text: 'Generate the revive question now.' }] }],
-          generationConfig: { response_mime_type: 'application/json' }
-        })
-      });
+      const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+      for (const model of geminiModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+          response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: systemPrompt }] },
+              contents: [{ parts: [{ text: 'Generate the revive question now.' }] }],
+              generationConfig: { response_mime_type: 'application/json' }
+            })
+          });
+
+          if (response.ok) {
+            break;
+          }
+        } catch (e) {
+          // try next model
+        }
+      }
     } else {
       response = await fetch(url, {
         method: 'POST',
@@ -71,15 +83,24 @@ Output strictly in JSON format exactly like this:
         })
       });
     }
-    if (!response.ok) throw new Error('Failed to generate revive question');
-    const data = await response.json();
-    if (isGemini) {
-      const text = data.candidates[0].content.parts[0].text;
+    try {
+      if (!response || !response.ok) throw new Error('Failed to generate revive question');
+      const data = await response.json();
+      if (isGemini) {
+        const text = data.candidates[0].content.parts[0].text;
+        const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanText);
+      }
+      const text = data.choices[0].message.content;
       const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       return JSON.parse(cleanText);
+    } catch (e) {
+      console.warn('Falling back to default revive question due to API error:', e);
+      return {
+        question: "Which pattern best prevents race conditions in a distributed 60-second game loop?",
+        options: ["Pessimistic Locking", "Host-Client Inversion Model", "Eventual Consistency", "Client-side Prediction"],
+        correctIndex: 1
+      };
     }
-    const text = data.choices[0].message.content;
-    const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-    return JSON.parse(cleanText);
   }
 };

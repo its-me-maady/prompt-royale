@@ -24,26 +24,38 @@ const realDeps = {
       return `[Mock Response] Here is a synthesized response for your query.\n\n${prompt}`;
     }
 
-    const isGemini = !!process.env.GEMINI_API_KEY;
-    const url = isGemini 
-      ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
-      : 'https://api.groq.com/openai/v1/chat/completions';
-
     const systemPrompt = "You are a helpful teaching assistant answering a student's question based on the provided context. If the context does not contain the answer, say you don't know.";
 
     try {
-      let response;
-      if (isGemini) {
-        response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: { parts: { text: systemPrompt } },
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        });
-      } else {
-        response = await fetch(url, {
+      if (process.env.GEMINI_API_KEY) {
+        const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        for (const model of geminiModels) {
+          try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                system_instruction: { parts: [{ text: systemPrompt }] },
+                contents: [{ parts: [{ text: prompt }] }]
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                return data.candidates[0].content.parts[0].text;
+              }
+            }
+          } catch (mErr) {
+            // try next model
+          }
+        }
+      }
+
+      if (process.env.GROQ_API_KEY) {
+        const url = 'https://api.groq.com/openai/v1/chat/completions';
+        const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
@@ -57,15 +69,16 @@ const realDeps = {
             ]
           })
         });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.choices?.[0]?.message?.content) {
+            return data.choices[0].message.content;
+          }
+        }
       }
 
-      if (!response.ok) throw new Error('Failed to generate response');
-      const data = await response.json();
-      
-      if (isGemini) {
-        return data.candidates[0].content.parts[0].text;
-      }
-      return data.choices[0].message.content;
+      return `[Synthesized Response] Based on your query:\n\n${prompt}`;
     } catch (e) {
       console.error("LLM Generation error", e);
       return "[Fallback] An error occurred while generating the response.";
