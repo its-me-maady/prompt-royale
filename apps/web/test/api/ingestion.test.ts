@@ -18,8 +18,10 @@ vi.mock('@/lib/ai/llamaparse', () => ({
   parseDocument: (...args: any[]) => mockLlamaParse(...args)
 }));
 
-vi.mock('@/lib/ai/openai', () => ({
-  generateEmbeddings: (...args: any[]) => mockOpenAIEmbed(...args)
+vi.mock('@/services/embedding', () => ({
+  embeddingApi: {
+    createEmbeddings: (...args: any[]) => mockOpenAIEmbed(...args)
+  }
 }));
 
 vi.mock('@/lib/db/supabase', () => ({

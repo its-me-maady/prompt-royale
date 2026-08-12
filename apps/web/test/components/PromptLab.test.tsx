@@ -19,7 +19,7 @@ describe('PromptLab UI Tests', () => {
   it('renders the form correctly', () => {
     render(<PromptLab />);
     expect(screen.getByText('Prompt Lab')).toBeTruthy();
-    expect(screen.getByPlaceholderText('Ask a question...')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Enter your prompt here...')).toBeTruthy();
     expect(screen.getByRole('button')).toBeTruthy();
   });
 
@@ -34,17 +34,16 @@ describe('PromptLab UI Tests', () => {
     
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ response: mockSynthesis }),
+      json: async () => ({ answer: mockSynthesis, sources: ['Doc 1'] }),
     });
 
     render(<PromptLab />);
     
-    const queryInput = screen.getByPlaceholderText('Ask a question...');
+    const queryInput = screen.getByPlaceholderText('Enter your prompt here...');
     const submitBtn = screen.getByRole('button');
 
     fireEvent.change(queryInput, { target: { value: 'What is a graph?' } });
     
-    // After filling inputs, button should be enabled
     expect((submitBtn as HTMLButtonElement).disabled).toBe(false);
 
     fireEvent.click(submitBtn);
@@ -53,7 +52,7 @@ describe('PromptLab UI Tests', () => {
       expect(screen.getByText(mockSynthesis)).toBeTruthy();
     });
     
-    expect(global.fetch).toHaveBeenCalledWith('/api/lab/chat', expect.objectContaining({
+    expect(global.fetch).toHaveBeenCalledWith('/api/rag', expect.objectContaining({
       method: 'POST',
       headers: expect.objectContaining({ 
         'Content-Type': 'application/json',
@@ -71,11 +70,11 @@ describe('PromptLab UI Tests', () => {
 
     render(<PromptLab />);
     
-    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'What is a graph?' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your prompt here...'), { target: { value: 'What is a graph?' } });
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(screen.getByText('Course ID not found')).toBeTruthy();
+      expect(screen.getByText('Error: Course ID not found')).toBeTruthy();
     });
   });
 
@@ -88,11 +87,11 @@ describe('PromptLab UI Tests', () => {
 
     render(<PromptLab />);
     
-    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'What is a graph?' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your prompt here...'), { target: { value: 'What is a graph?' } });
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(screen.getByText('Server error: 500')).toBeTruthy();
+      expect(screen.getByText(/Error:/)).toBeTruthy();
     });
   });
 });

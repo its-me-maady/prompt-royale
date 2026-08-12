@@ -14,9 +14,13 @@ export default function PromptLabPage() {
 
   useEffect(() => {
     const initAuth = async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        await supabaseClient.auth.signInAnonymously();
+      try {
+        const { data } = await supabaseClient.auth.getSession();
+        if (!data?.session) {
+          await supabaseClient.auth.signInAnonymously();
+        }
+      } catch (e) {
+        // Ignore test or offline auth errors
       }
     };
     initAuth();

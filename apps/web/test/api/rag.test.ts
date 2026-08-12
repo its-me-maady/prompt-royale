@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { POST } from '../../../src/app/api/rag/route';
-import { embeddingApi } from '../../../src/services/embedding';
-import { vectorDb } from '../../../src/services/vectorDb';
+import { POST } from '@/app/api/rag/route';
+import { embeddingApi } from '@/services/embedding';
+import { vectorDb } from '@/services/vectorDb';
 
-vi.mock('../../../src/services/embedding');
-vi.mock('../../../src/services/vectorDb');
-vi.mock('../../../src/engine/rag', () => ({
+vi.mock('@/services/embedding');
+vi.mock('@/services/vectorDb');
+vi.mock('@/engine/rag', () => ({
   processRagQuery: vi.fn().mockResolvedValue({
     answer: 'This is a mocked RAG answer.',
     sources: ['Mock source 1']

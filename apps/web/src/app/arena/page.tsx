@@ -54,6 +54,8 @@ export default function BossRaidArena() {
     initAuth();
   }, []);
 
+  const offlineTimerRef = useRef<any>(null);
+
   // Initialize game state and channel
   useEffect(() => {
     if (!playerId) return;
@@ -63,6 +65,7 @@ export default function BossRaidArena() {
 
     channel
       .on("presence", { event: "sync" }, () => {
+        if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current);
         const state = channel.presenceState();
         const playersIds = Object.keys(state).sort();
         if (playersIds[0] === playerId) {
@@ -106,6 +109,7 @@ export default function BossRaidArena() {
         }
       })
       .on("broadcast", { event: "state_update" }, ({ payload }) => {
+        if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current);
         setGameState(payload);
       })
       .on("broadcast", { event: "error_update" }, ({ payload }) => {
@@ -127,7 +131,7 @@ export default function BossRaidArena() {
         });
       });
 
-    const offlineTimer = setTimeout(() => {
+    offlineTimerRef.current = setTimeout(() => {
       setGameState((prev) => {
         if (!prev) {
           setIsHost(true);
@@ -144,7 +148,7 @@ export default function BossRaidArena() {
     }, 1200);
 
     return () => {
-      clearTimeout(offlineTimer);
+      if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current);
       channel.unsubscribe();
     };
   }, [playerId]);

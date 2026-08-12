@@ -62,6 +62,11 @@ describe('Arena Page', () => {
   it('should become host and render state when presence sync fires', async () => {
     render(<ArenaPage />);
     
+    // Flush microtasks for initAuth
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 10));
+    });
+    
     // Simulate presence sync
     await act(async () => {
       const presenceSync = mockCallbacks['presence:sync'];
@@ -81,6 +86,11 @@ describe('Arena Page', () => {
 
   it('should render received state update when not host', async () => {
     render(<ArenaPage />);
+    
+    // Flush microtasks for initAuth
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 10));
+    });
     
     // Simulate receiving a broadcast from host
     await act(async () => {
