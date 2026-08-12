@@ -127,13 +127,24 @@ export default function BossRaidArena() {
         });
       });
 
-    channel.subscribe(async (status: string) => {
-      if (status === "SUBSCRIBED") {
-        await channel.track({ online_at: new Date().toISOString() });
-      }
-    });
+    const offlineTimer = setTimeout(() => {
+      setGameState((prev) => {
+        if (!prev) {
+          setIsHost(true);
+          const initialState: GameState = {
+            boss: { hp: 1000, maxHp: 1000 },
+            players: [{ id: playerId || "player-1", hp: 100, status: "alive" }],
+            status: "active",
+          };
+          fetchQuestion();
+          return initialState;
+        }
+        return prev;
+      });
+    }, 1200);
 
     return () => {
+      clearTimeout(offlineTimer);
       channel.unsubscribe();
     };
   }, [playerId]);

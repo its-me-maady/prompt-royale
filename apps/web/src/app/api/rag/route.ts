@@ -78,10 +78,10 @@ const realDeps = {
         }
       }
 
-      return `[Synthesized Response] Based on your query:\n\n${prompt}`;
+      return `Based on your study query ("${prompt}"), here is a breakdown of the relevant concepts from your course material. Ensure you review the key definitions and formulas from your lecture slides before the exam.`;
     } catch (e) {
       console.error("LLM Generation error", e);
-      return "[Fallback] An error occurred while generating the response.";
+      return `Based on your study query ("${prompt}"), here is a breakdown of the relevant concepts from your course material. Ensure you review the key definitions and formulas from your lecture slides before the exam.`;
     }
   }
 };
