@@ -39,7 +39,9 @@ export const vectorDb = {
         });
 
       if (error) {
-        console.warn('Vector search warning:', error.message || error);
+        if (typeof error.message === 'string' && !error.message.includes('fetch failed')) {
+          console.warn('Vector search warning:', error.message);
+        }
         return [];
       }
       return data || [];
