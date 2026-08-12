@@ -78,10 +78,12 @@ const realDeps = {
         }
       }
 
-      return `Based on your study query ("${prompt}"), here is a breakdown of the relevant concepts from your course material. Ensure you review the key definitions and formulas from your lecture slides before the exam.`;
+      const cleanQuery = prompt.includes('Query:') ? prompt.split('Query:').pop()?.trim() || prompt : prompt;
+      return `Based on your study query ("${cleanQuery}"), here is a breakdown of the relevant concepts from your course material. Ensure you review key definitions and formulas from your lecture slides before the exam.`;
     } catch (e) {
       console.error("LLM Generation error", e);
-      return `Based on your study query ("${prompt}"), here is a breakdown of the relevant concepts from your course material. Ensure you review the key definitions and formulas from your lecture slides before the exam.`;
+      const cleanQuery = prompt.includes('Query:') ? prompt.split('Query:').pop()?.trim() || prompt : prompt;
+      return `Based on your study query ("${cleanQuery}"), here is a breakdown of the relevant concepts from your course material. Ensure you review key definitions and formulas from your lecture slides before the exam.`;
     }
   }
 };
