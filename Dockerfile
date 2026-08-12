@@ -7,6 +7,7 @@ FROM base AS builder
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
+RUN mkdir -p /app/apps/web/public
 RUN pnpm run build --filter web
 
 FROM base AS runner
