@@ -25,7 +25,17 @@ vi.mock('../../src/lib/db/supabase-client', () => {
         unsubscribe: vi.fn()
       })),
       auth: {
-        getSession: async () => ({ data: { session: { access_token: 'test-token' } } })
+        getSession: async () => ({
+          data: { session: null },
+          error: null,
+        }),
+        signInAnonymously: async () => ({
+          data: {
+            user: { id: 'p1' },
+            session: { access_token: 'anon-token' }
+          },
+          error: null,
+        }),
       }
     }
   };
@@ -35,9 +45,10 @@ describe('Arena Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCallbacks = {};
-    // Mock Math.random so playerId is always 'p1'
+    mockSend = vi.fn();
+    // Mock Math.random so playerId fallback is always 'p1'
     vi.spyOn(Math, 'random').mockReturnValue(0.0001);
-    
+
     // Mock fetch for revive questions
     global.fetch = vi.fn().mockResolvedValue({
       json: vi.fn().mockResolvedValue({
@@ -61,13 +72,23 @@ describe('Arena Page', () => {
 
   it('should become host and render state when presence sync fires', async () => {
     render(<ArenaPage />);
-    
+
+    // Wait for auth to complete (signInAnonymously)
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    });
+
     // Simulate presence sync
     await act(async () => {
       const presenceSync = mockCallbacks['presence:sync'];
       if (presenceSync) {
         presenceSync();
       }
+    });
+
+    // Wait for fetchQuestion to complete
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 10));
     });
 
     // We should see the UI
@@ -81,7 +102,25 @@ describe('Arena Page', () => {
 
   it('should render received state update when not host', async () => {
     render(<ArenaPage />);
-    
+
+    // Wait for auth to complete and channel to be set up
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    });
+
+    // Simulate presence sync first to set up the channel
+    await act(async () => {
+      const presenceSync = mockCallbacks['presence:sync'];
+      if (presenceSync) {
+        presenceSync();
+      }
+    });
+
+    // Wait a bit for channel setup
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    });
+
     // Simulate receiving a broadcast from host
     await act(async () => {
       const stateUpdate = mockCallbacks['broadcast:state_update'];
@@ -94,7 +133,7 @@ describe('Arena Page', () => {
           }
         });
       }
-      
+
       const questionUpdate = mockCallbacks['broadcast:question_update'];
       if (questionUpdate) {
         questionUpdate({

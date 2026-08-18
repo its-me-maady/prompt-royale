@@ -37,6 +37,7 @@ function createJsonRequest(body: any, auth: string | null = 'Bearer valid-token'
 describe('Prompt Lab RAG Endpoint Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default mock: valid user
     vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null } as any);
   });
 

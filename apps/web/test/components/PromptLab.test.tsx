@@ -3,7 +3,48 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import PromptLab from '@/app/prompt-lab/page';
 
+// Mock Supabase auth using the same relative path as the component
+vi.mock('../../src/lib/db/supabase-client', () => {
+  const defaultSession = {
+    access_token: 'mock-access-token',
+    refresh_token: 'mock-refresh-token',
+    expires_in: 3600,
+    token_type: 'bearer',
+    user: {
+      id: 'mock-user-id',
+      email: 'test@example.com',
+      created_at: new Date().toISOString(),
+    },
+  };
 
+  return {
+    supabaseClient: {
+      auth: {
+        getSession: vi.fn().mockResolvedValue({
+          data: { session: defaultSession },
+          error: null,
+        }),
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: defaultSession.user },
+          error: null,
+        }),
+        signInAnonymously: vi.fn().mockResolvedValue({
+          data: { user: defaultSession.user, session: defaultSession },
+          error: null,
+        }),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+      channel: vi.fn(() => ({
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockResolvedValue('SUBSCRIBED'),
+        send: vi.fn(),
+        presenceState: vi.fn().mockReturnValue({}),
+        track: vi.fn(),
+        unsubscribe: vi.fn(),
+      })),
+    },
+  };
+});
 
 describe('PromptLab UI Tests', () => {
   beforeEach(() => {
@@ -12,14 +53,14 @@ describe('PromptLab UI Tests', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
     cleanup();
   });
 
   it('renders the form correctly', () => {
     render(<PromptLab />);
     expect(screen.getByText('Prompt Lab')).toBeTruthy();
-    expect(screen.getByPlaceholderText('Ask a question...')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Enter your prompt here...')).toBeTruthy();
     expect(screen.getByRole('button')).toBeTruthy();
   });
 
@@ -31,19 +72,20 @@ describe('PromptLab UI Tests', () => {
 
   it('submits the form and displays the AI synthesis successfully', async () => {
     const mockSynthesis = 'This is the AI synthesized response.';
-    
+    const mockSources = ['Mock source 1', 'Mock source 2'];
+
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ response: mockSynthesis }),
+      json: async () => ({ answer: mockSynthesis, sources: mockSources }),
     });
 
     render(<PromptLab />);
-    
-    const queryInput = screen.getByPlaceholderText('Ask a question...');
+
+    const queryInput = screen.getByPlaceholderText('Enter your prompt here...');
     const submitBtn = screen.getByRole('button');
 
     fireEvent.change(queryInput, { target: { value: 'What is a graph?' } });
-    
+
     // After filling inputs, button should be enabled
     expect((submitBtn as HTMLButtonElement).disabled).toBe(false);
 
@@ -52,10 +94,10 @@ describe('PromptLab UI Tests', () => {
     await waitFor(() => {
       expect(screen.getByText(mockSynthesis)).toBeTruthy();
     });
-    
-    expect(global.fetch).toHaveBeenCalledWith('/api/lab/chat', expect.objectContaining({
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/rag', expect.objectContaining({
       method: 'POST',
-      headers: expect.objectContaining({ 
+      headers: expect.objectContaining({
         'Content-Type': 'application/json',
       }),
       body: expect.any(String),
@@ -70,12 +112,12 @@ describe('PromptLab UI Tests', () => {
     });
 
     render(<PromptLab />);
-    
-    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'What is a graph?' } });
+
+    fireEvent.change(screen.getByPlaceholderText('Enter your prompt here...'), { target: { value: 'What is a graph?' } });
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(screen.getByText('Course ID not found')).toBeTruthy();
+      expect(screen.getByText('Error: Course ID not found')).toBeTruthy();
     });
   });
 
@@ -87,12 +129,12 @@ describe('PromptLab UI Tests', () => {
     });
 
     render(<PromptLab />);
-    
-    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'What is a graph?' } });
+
+    fireEvent.change(screen.getByPlaceholderText('Enter your prompt here...'), { target: { value: 'What is a graph?' } });
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(screen.getByText('Server error: 500')).toBeTruthy();
+      expect(screen.getByText('Error: Not JSON')).toBeTruthy();
     });
   });
 });
