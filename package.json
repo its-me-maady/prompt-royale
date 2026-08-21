@@ -8,6 +8,7 @@
     "test": "turbo run test"
   },
   "devDependencies": {
+    "next": "14.2.5",
     "turbo": "^2.0.12",
     "typescript": "^5.5.4"
   },
