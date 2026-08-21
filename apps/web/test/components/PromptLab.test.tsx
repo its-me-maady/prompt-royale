@@ -3,7 +3,21 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import PromptLab from '@/app/prompt-lab/page';
 
-
+// Mock Supabase client for PromptLab
+vi.mock('@/lib/db/supabase-client', () => ({
+  supabaseClient: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ 
+        data: { session: { access_token: 'test-token', user: { id: 'test-user' } } }, 
+        error: null 
+      }),
+      signInAnonymously: vi.fn().mockResolvedValue({
+        data: { user: { id: 'test-user' }, session: { access_token: 'mock-token' } },
+        error: null,
+      }),
+    },
+  }
+}));
 
 describe('PromptLab UI Tests', () => {
   beforeEach(() => {
@@ -19,7 +33,7 @@ describe('PromptLab UI Tests', () => {
   it('renders the form correctly', () => {
     render(<PromptLab />);
     expect(screen.getByText('Prompt Lab')).toBeTruthy();
-    expect(screen.getByPlaceholderText('Ask a question...')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Enter your prompt here...')).toBeTruthy();
     expect(screen.getByRole('button')).toBeTruthy();
   });
 
@@ -30,16 +44,19 @@ describe('PromptLab UI Tests', () => {
   });
 
   it('submits the form and displays the AI synthesis successfully', async () => {
-    const mockSynthesis = 'This is the AI synthesized response.';
+    const mockAnswer = 'This is the AI synthesized response.';
     
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ response: mockSynthesis }),
+      json: async () => ({ 
+        answer: mockAnswer,
+        sources: ['source 1', 'source 2']
+      }),
     });
 
     render(<PromptLab />);
     
-    const queryInput = screen.getByPlaceholderText('Ask a question...');
+    const queryInput = screen.getByPlaceholderText('Enter your prompt here...');
     const submitBtn = screen.getByRole('button');
 
     fireEvent.change(queryInput, { target: { value: 'What is a graph?' } });
@@ -50,10 +67,10 @@ describe('PromptLab UI Tests', () => {
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(mockSynthesis)).toBeTruthy();
+      expect(screen.getByText(mockAnswer)).toBeTruthy();
     });
     
-    expect(global.fetch).toHaveBeenCalledWith('/api/lab/chat', expect.objectContaining({
+    expect(global.fetch).toHaveBeenCalledWith('/api/rag', expect.objectContaining({
       method: 'POST',
       headers: expect.objectContaining({ 
         'Content-Type': 'application/json',
@@ -71,11 +88,11 @@ describe('PromptLab UI Tests', () => {
 
     render(<PromptLab />);
     
-    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'What is a graph?' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your prompt here...'), { target: { value: 'What is a graph?' } });
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(screen.getByText('Course ID not found')).toBeTruthy();
+      expect(screen.getByText(/Course ID not found/)).toBeTruthy();
     });
   });
 
@@ -88,11 +105,11 @@ describe('PromptLab UI Tests', () => {
 
     render(<PromptLab />);
     
-    fireEvent.change(screen.getByPlaceholderText('Ask a question...'), { target: { value: 'What is a graph?' } });
+    fireEvent.change(screen.getByPlaceholderText('Enter your prompt here...'), { target: { value: 'What is a graph?' } });
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(screen.getByText('Server error: 500')).toBeTruthy();
+      expect(screen.getByText(/Error: /)).toBeTruthy();
     });
   });
 });

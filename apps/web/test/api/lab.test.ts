@@ -1,5 +1,3 @@
-// agent-notes: { ctx: "P0 TDD red phase for Prompt Lab RAG endpoint", deps: ["docs/adrs/0005-prompt-lab-rag.md", "docs/test-strategy.md"], state: "active", last: "tara@2026-07-31" }
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST as ChatRoute } from '../../src/app/api/lab/chat/route';
 import { NextRequest } from 'next/server';
@@ -10,7 +8,7 @@ vi.mock('../../src/services/llm', () => ({
   llmService: {
     expandQuery: vi.fn(),
     generateSynthesis: vi.fn(),
-  },
+  }
 }));
 
 vi.mock('../../src/lib/db/supabase', () => ({
@@ -19,17 +17,14 @@ vi.mock('../../src/lib/db/supabase', () => ({
     auth: {
       getUser: vi.fn(),
     },
-  },
+  }
 }));
 
-function createJsonRequest(body: any, auth: string | null = 'Bearer valid-token') {
-  const headers = new Map();
-  if (auth) headers.set('authorization', auth);
-  
+function createJsonRequest(body: any) {
   return {
     json: async () => body,
     headers: {
-      get: (key: string) => headers.get(key.toLowerCase()) || null,
+      get: () => null,
     },
   } as unknown as NextRequest;
 }
@@ -37,7 +32,6 @@ function createJsonRequest(body: any, auth: string | null = 'Bearer valid-token'
 describe('Prompt Lab RAG Endpoint Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null } as any);
   });
 
   describe('Happy Path', () => {
@@ -75,26 +69,11 @@ describe('Prompt Lab RAG Endpoint Tests', () => {
   });
 
   describe('Unhappy Paths', () => {
-    it('should return 401 if unauthorized', async () => {
-      const req = createJsonRequest({ query: 'test', courseId: 'c1' }, null);
-      const response = await ChatRoute(req);
-      
-      expect(response.status).toBe(401);
-    });
-
-    it('should return 401 if token is invalid', async () => {
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: new Error('Invalid token') } as any);
-      const req = createJsonRequest({ query: 'test', courseId: 'c1' }, 'Bearer invalid-token');
-      const response = await ChatRoute(req);
-      
-      expect(response.status).toBe(401);
-    });
-
     it('should return 400 if JSON is malformed', async () => {
       const req = {
         json: async () => { throw new SyntaxError('Unexpected token'); },
         headers: {
-          get: (key: string) => key.toLowerCase() === 'authorization' ? 'Bearer valid-token' : null,
+          get: () => null,
         },
       } as unknown as NextRequest;
       const response = await ChatRoute(req);

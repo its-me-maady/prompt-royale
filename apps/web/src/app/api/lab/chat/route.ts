@@ -5,8 +5,8 @@ import { supabase } from '@/lib/db/supabase';
 import { z } from 'zod';
 
 const chatSchema = z.object({
-  query: z.string({ required_error: 'Missing query', invalid_type_error: 'Missing query' }).min(1, 'Missing query'),
-  courseId: z.string({ required_error: 'Missing courseId', invalid_type_error: 'Missing courseId' }).min(1, 'Missing courseId'),
+  query: z.string().min(1, 'Missing query'),
+  courseId: z.string().min(1, 'Missing courseId'),
 });
 
 export async function POST(req: NextRequest) {
