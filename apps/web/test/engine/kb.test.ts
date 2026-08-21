@@ -99,7 +99,7 @@ describe('Knowledge Base Ingestion Engine', () => {
 
       expect(embeddingApi.createEmbeddings).toHaveBeenCalledWith(inputChunks);
       expect(vectorDb.upsert).toHaveBeenCalledWith(expect.arrayContaining([
-        expect.objectContaining({ id: 'doc-123-0', embedding: [0.1, 0.2] })
+        expect.objectContaining({ id: 'doc-123-0', content: 'Chunk 1 text', embedding: [0.1, 0.2] })
       ]));
       expect(success).toBe(true);
     });

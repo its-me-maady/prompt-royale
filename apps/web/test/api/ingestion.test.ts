@@ -4,24 +4,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies
-const mockGroqTranscribe = vi.fn();
-const mockLlamaParse = vi.fn();
-const mockOpenAIEmbed = vi.fn();
+const mockTranscribeAudio = vi.fn();
+const mockParseDocument = vi.fn();
+const mockGenerateEmbeddings = vi.fn();
 const mockSupabaseInsert = vi.fn();
 
 // Mock modules - using abstract placeholder paths to be adapted during implementation
 vi.mock('@/lib/ai/groq', () => ({
-  transcribeAudio: (...args: any[]) => mockGroqTranscribe(...args)
+  transcribeAudio: (...args: any[]) => mockTranscribeAudio(...args)
 }));
 
 vi.mock('@/lib/ai/llamaparse', () => ({
-  parseDocument: (...args: any[]) => mockLlamaParse(...args)
+  parseDocument: (...args: any[]) => mockParseDocument(...args)
 }));
 
-vi.mock('@/services/embedding', () => ({
-  embeddingApi: {
-    createEmbeddings: (...args: any[]) => mockOpenAIEmbed(...args)
-  }
+vi.mock('@/lib/ai/openai', () => ({
+  generateEmbeddings: (...args: any[]) => mockGenerateEmbeddings(...args)
 }));
 
 vi.mock('@/lib/db/supabase', () => ({
@@ -40,10 +38,10 @@ describe('POST /api/kb/upload', () => {
   });
 
   describe('Happy Paths', () => {
-    it('should process an audio file, chunk it, and save metadata via Groq and OpenAI', async () => {
+    it('should process an audio file, chunk it, and save metadata via Gemini and OpenAI', async () => {
       // Arrange
-      mockGroqTranscribe.mockResolvedValue('Transcribed lecture content.');
-      mockOpenAIEmbed.mockResolvedValue([{ embedding: [0.1, 0.2, 0.3], content: 'Transcribed lecture chunk' }]);
+      mockTranscribeAudio.mockResolvedValue('Transcribed lecture content.');
+      mockGenerateEmbeddings.mockResolvedValue([{ embedding: [0.1, 0.2, 0.3], content: 'Transcribed lecture chunk' }]);
       mockSupabaseInsert.mockResolvedValue({ data: { id: 1 }, error: null });
 
       const formData = new FormData();
@@ -61,8 +59,8 @@ describe('POST /api/kb/upload', () => {
 
       // Assert
       expect(response.status).toBe(200);
-      expect(mockGroqTranscribe).toHaveBeenCalledTimes(1);
-      expect(mockOpenAIEmbed).toHaveBeenCalledTimes(1);
+      expect(mockTranscribeAudio).toHaveBeenCalledTimes(1);
+      expect(mockGenerateEmbeddings).toHaveBeenCalledTimes(1);
       expect(mockSupabaseInsert).toHaveBeenCalledTimes(1);
       
       const responseBody = await response.json();
@@ -71,8 +69,8 @@ describe('POST /api/kb/upload', () => {
 
     it('should process a PPT file, parse markdown, chunk it, and save via LlamaParse and OpenAI', async () => {
       // Arrange
-      mockLlamaParse.mockResolvedValue('# Slide 1\nContent');
-      mockOpenAIEmbed.mockResolvedValue([{ embedding: [0.1, 0.2, 0.3], content: '# Slide 1 content chunk' }]);
+      mockParseDocument.mockResolvedValue('# Slide 1\nContent');
+      mockGenerateEmbeddings.mockResolvedValue([{ embedding: [0.1, 0.2, 0.3], content: '# Slide 1 content chunk' }]);
       mockSupabaseInsert.mockResolvedValue({ data: { id: 2 }, error: null });
 
       const formData = new FormData();
@@ -90,8 +88,8 @@ describe('POST /api/kb/upload', () => {
 
       // Assert
       expect(response.status).toBe(200);
-      expect(mockLlamaParse).toHaveBeenCalledTimes(1);
-      expect(mockOpenAIEmbed).toHaveBeenCalledTimes(1);
+      expect(mockParseDocument).toHaveBeenCalledTimes(1);
+      expect(mockGenerateEmbeddings).toHaveBeenCalledTimes(1);
       expect(mockSupabaseInsert).toHaveBeenCalledTimes(1);
     });
   });
@@ -134,7 +132,7 @@ describe('POST /api/kb/upload', () => {
 
     it('should return 500 if the external transcription API fails', async () => {
       // Arrange
-      mockGroqTranscribe.mockRejectedValue(new Error('Groq API Rate Limit Exceeded'));
+      mockTranscribeAudio.mockRejectedValue(new Error('External API processing failed'));
       
       const formData = new FormData();
       formData.append('file', new Blob(['audio blob'], { type: 'audio/mpeg' }), 'lecture.mp3');

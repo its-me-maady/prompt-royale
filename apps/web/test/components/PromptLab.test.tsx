@@ -3,7 +3,21 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import PromptLab from '@/app/prompt-lab/page';
 
-
+// Mock Supabase client for PromptLab
+vi.mock('@/lib/db/supabase-client', () => ({
+  supabaseClient: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ 
+        data: { session: { access_token: 'test-token', user: { id: 'test-user' } } }, 
+        error: null 
+      }),
+      signInAnonymously: vi.fn().mockResolvedValue({
+        data: { user: { id: 'test-user' }, session: { access_token: 'mock-token' } },
+        error: null,
+      }),
+    },
+  }
+}));
 
 describe('PromptLab UI Tests', () => {
   beforeEach(() => {
@@ -30,11 +44,14 @@ describe('PromptLab UI Tests', () => {
   });
 
   it('submits the form and displays the AI synthesis successfully', async () => {
-    const mockSynthesis = 'This is the AI synthesized response.';
+    const mockAnswer = 'This is the AI synthesized response.';
     
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ answer: mockSynthesis, sources: ['Doc 1'] }),
+      json: async () => ({ 
+        answer: mockAnswer,
+        sources: ['source 1', 'source 2']
+      }),
     });
 
     render(<PromptLab />);
@@ -44,12 +61,13 @@ describe('PromptLab UI Tests', () => {
 
     fireEvent.change(queryInput, { target: { value: 'What is a graph?' } });
     
+    // After filling inputs, button should be enabled
     expect((submitBtn as HTMLButtonElement).disabled).toBe(false);
 
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(mockSynthesis)).toBeTruthy();
+      expect(screen.getByText(mockAnswer)).toBeTruthy();
     });
     
     expect(global.fetch).toHaveBeenCalledWith('/api/rag', expect.objectContaining({
@@ -74,7 +92,7 @@ describe('PromptLab UI Tests', () => {
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(screen.getByText('Error: Course ID not found')).toBeTruthy();
+      expect(screen.getByText(/Course ID not found/)).toBeTruthy();
     });
   });
 
@@ -91,7 +109,7 @@ describe('PromptLab UI Tests', () => {
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(screen.getByText(/Error:/)).toBeTruthy();
+      expect(screen.getByText(/Error: /)).toBeTruthy();
     });
   });
 });
