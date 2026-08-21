@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "TDD red phase tests for KB ingestion API", deps: ["docs/adrs/0004-kb-ingestion-storage.md"], state: "active", last: "tara@2026-07-31" }
+ * agent-notes: { ctx: "KB ingestion API test suite for audio and document upload", deps: ["apps/web/src/services/embedding.ts"], state: "canonical", last: "grace@2026-08-21" }
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -18,8 +18,10 @@ vi.mock('@/lib/ai/llamaparse', () => ({
   parseDocument: (...args: any[]) => mockParseDocument(...args)
 }));
 
-vi.mock('@/lib/ai/openai', () => ({
-  generateEmbeddings: (...args: any[]) => mockGenerateEmbeddings(...args)
+vi.mock('@/services/embedding', () => ({
+  embeddingApi: {
+    createEmbeddings: (...args: any[]) => mockGenerateEmbeddings(...args)
+  }
 }));
 
 vi.mock('@/lib/db/supabase', () => ({
@@ -41,7 +43,7 @@ describe('POST /api/kb/upload', () => {
     it('should process an audio file, chunk it, and save metadata via Gemini and OpenAI', async () => {
       // Arrange
       mockTranscribeAudio.mockResolvedValue('Transcribed lecture content.');
-      mockGenerateEmbeddings.mockResolvedValue([{ embedding: [0.1, 0.2, 0.3], content: 'Transcribed lecture chunk' }]);
+      mockGenerateEmbeddings.mockResolvedValue([[0.1, 0.2, 0.3]]);
       mockSupabaseInsert.mockResolvedValue({ data: { id: 1 }, error: null });
 
       const formData = new FormData();
@@ -70,7 +72,7 @@ describe('POST /api/kb/upload', () => {
     it('should process a PPT file, parse markdown, chunk it, and save via LlamaParse and OpenAI', async () => {
       // Arrange
       mockParseDocument.mockResolvedValue('# Slide 1\nContent');
-      mockGenerateEmbeddings.mockResolvedValue([{ embedding: [0.1, 0.2, 0.3], content: '# Slide 1 content chunk' }]);
+      mockGenerateEmbeddings.mockResolvedValue([[0.1, 0.2, 0.3]]);
       mockSupabaseInsert.mockResolvedValue({ data: { id: 2 }, error: null });
 
       const formData = new FormData();

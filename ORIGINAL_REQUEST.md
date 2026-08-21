@@ -4,7 +4,7 @@
 
 PromptRoyale: A gamified, multiplayer study and quiz arena where students team up to defeat AI bosses by answering questions generated from their class notes.
 
-Working directory: ~/teamwork_projects/prompt_royale
+Working directory: ~/learning/prompt_royale
 Integrity mode: development
 
 ## Requirements
