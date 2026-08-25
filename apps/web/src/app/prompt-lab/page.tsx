@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Student Prompt Lab UI", deps: [], state: "canonical", last: "sato@2026-08-05" }
+ * agent-notes: { ctx: "Student Prompt Lab UI with Subject/Course selection and Prompt Restyling", deps: ["apps/web/src/app/api/rag/route.ts", "apps/web/src/app/api/kb/courses/route.ts"], state: "canonical", last: "sato@2026-08-25" }
  */
 'use client';
 
@@ -8,23 +8,62 @@ import { supabaseClient } from '../../lib/db/supabase-client';
 
 export default function PromptLabPage() {
   const [prompt, setPrompt] = useState('');
+  const [courses, setCourses] = useState<string[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>('all');
+  const [customCourse, setCustomCourse] = useState<string>('');
   const [context, setContext] = useState<string[]>([]);
   const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestyling, setIsRestyling] = useState(false);
 
   useEffect(() => {
-    const initAuth = async () => {
+    const initAuthAndCourses = async () => {
       try {
         const { data } = await supabaseClient.auth.getSession();
         if (!data?.session) {
           await supabaseClient.auth.signInAnonymously();
         }
       } catch (e) {
-        // Ignore test or offline auth errors
+        // Ignore auth error in test
+      }
+
+      try {
+        const res = await fetch('/api/kb/courses');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.courses && Array.isArray(data.courses)) {
+            setCourses(data.courses);
+          }
+        }
+      } catch (e) {
+        setCourses(['CS101', 'CS102', 'MATH201', 'PHYS101']);
       }
     };
-    initAuth();
+    initAuthAndCourses();
   }, []);
+
+  const effectiveCourseId = selectedCourse === 'custom' ? customCourse.trim() : selectedCourse;
+
+  const handleEnhancePrompt = async () => {
+    if (!prompt.trim() || isRestyling) return;
+    setIsRestyling(true);
+
+    try {
+      const res = await fetch('/api/prompt-lab/restyle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: prompt.trim() })
+      });
+      const data = await res.json();
+      if (res.ok && data.restyledSummary) {
+        setPrompt(data.restyledSummary);
+      }
+    } catch (e) {
+      // Ignore enhancement error
+    } finally {
+      setIsRestyling(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,16 +77,27 @@ export default function PromptLabPage() {
       const res = await fetch('/api/rag', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: prompt.trim() })
+        body: JSON.stringify({
+          query: prompt.trim(),
+          courseId: effectiveCourseId
+        })
       });
-      const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error);
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        throw new Error('Server returned non-JSON response');
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.error || `HTTP ${res.status} error`);
+      }
 
       setContext(data.sources || []);
       setOutput(data.answer || '');
     } catch (err: any) {
-      setOutput(`Error: ${err.message}`);
+      setOutput(`Error: ${err.message || String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -60,30 +110,76 @@ export default function PromptLabPage() {
           <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
             Prompt Lab
           </h1>
-          <p className="text-slate-400 mt-2">Test your prompts against the Knowledge Base.</p>
+          <p className="text-slate-400 mt-2">Test and refine your prompts against specific subject Knowledge Base resources.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
           <div className="flex flex-col gap-6">
-            {/* Input Section */}
-            <div className="p-6 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-lg flex flex-col h-full">
-              <h2 className="text-xl font-bold mb-4 text-slate-200">Input Prompt</h2>
-              <form onSubmit={handleSubmit} className="flex flex-col h-full gap-4">
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Enter your prompt here..."
-                  className="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[200px]"
-                  disabled={isLoading}
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading || !prompt.trim()}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            {/* Input & Subject Selection Section */}
+            <div className="p-6 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-lg flex flex-col h-full gap-4">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="course-select" className="text-sm font-semibold text-slate-300">
+                  Subject / Course Resource
+                </label>
+                <select
+                  id="course-select"
+                  aria-label="Subject / Course"
+                  value={selectedCourse}
+                  onChange={(e) => setSelectedCourse(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  {isLoading ? 'Running...' : 'Run Prompt'}
-                </button>
-              </form>
+                  <option value="all">All Subjects / Knowledge Base</option>
+                  {courses.map((course) => (
+                    <option key={course} value={course}>
+                      {course}
+                    </option>
+                  ))}
+                  <option value="custom">Custom Subject ID...</option>
+                </select>
+
+                {selectedCourse === 'custom' && (
+                  <input
+                    type="text"
+                    placeholder="Enter custom Subject/Course ID..."
+                    value={customCourse}
+                    onChange={(e) => setCustomCourse(e.target.value)}
+                    className="mt-2 bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                )}
+              </div>
+
+              <div className="flex flex-col flex-1 gap-2">
+                <div className="flex justify-between items-center">
+                  <label htmlFor="prompt-input" className="text-sm font-semibold text-slate-300">
+                    Input Prompt
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleEnhancePrompt}
+                    disabled={isRestyling || !prompt.trim()}
+                    className="text-xs px-3 py-1.5 bg-indigo-950/80 border border-indigo-700/50 hover:bg-indigo-900/80 text-indigo-300 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    {isRestyling ? 'Enhancing...' : '✨ Enhance Prompt'}
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-4">
+                  <textarea
+                    id="prompt-input"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Enter your prompt here..."
+                    className="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[200px]"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isLoading || !prompt.trim()}
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Running...' : 'Run Prompt'}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
 
