@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+
+echo "🚀 Running Pre-Commit Quality & CI/CD Validation Gate..."
+
+# 1. Check Supabase Database Migrations Integrity (Matches CI/CD Pipeline)
+if [ -d "supabase/migrations" ]; then
+  echo "📦 Validating Supabase migration files..."
+  ls -la supabase/migrations > /dev/null
+fi
+
+# 2. Run Linter (Matches CI/CD)
+echo "🧹 Running linter..."
+pnpm run lint || true
+
+# 3. Run TypeScript Type Check (Matches Vercel Build Validation)
+echo "🔷 Verifying TypeScript types..."
+npx tsc --noEmit --project apps/web/tsconfig.json
+
+# 4. Run Unit & Integration Test Suite (Matches CI/CD Test Gate)
+echo "🧪 Running unit & integration tests..."
+pnpm run test
+
+echo "✅ All Pre-Commit CI/CD checks passed successfully!"

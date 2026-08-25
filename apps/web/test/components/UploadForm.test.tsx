@@ -21,7 +21,7 @@ describe('UploadForm', () => {
     expect(screen.getByText('Upload Course Material')).toBeTruthy();
     expect(screen.getByLabelText('Course ID')).toBeTruthy();
     expect(screen.getByLabelText('Lecture Title')).toBeTruthy();
-    expect(screen.getByLabelText('File (Audio or PPT)')).toBeTruthy();
+    expect(screen.getByLabelText(/Course File/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /Upload and Process/i })).toBeTruthy();
   });
 
@@ -35,7 +35,7 @@ describe('UploadForm', () => {
 
     const courseIdInput = screen.getByLabelText('Course ID');
     const titleInput = screen.getByLabelText('Lecture Title');
-    const fileInput = screen.getByLabelText('File (Audio or PPT)');
+    const fileInput = screen.getByLabelText(/Course File/i);
     const submitBtn = screen.getByRole('button', { name: /Upload and Process/i });
 
     fireEvent.change(courseIdInput, { target: { value: 'CS101' } });

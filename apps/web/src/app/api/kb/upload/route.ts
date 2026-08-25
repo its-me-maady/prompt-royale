@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     const formData = await req.formData();
-    const file = formData.get('file') as Blob | null;
+    const file = formData.get('file') as File | null;
     const metadataRaw = formData.get('metadata') as string | null;
 
     if (!file) {
