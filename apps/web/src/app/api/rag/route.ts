@@ -1,10 +1,11 @@
 /**
- * agent-notes: { ctx: "API route for RAG querying with courseId metadata filtering", deps: ["apps/web/src/engine/rag.ts", "apps/web/src/services/embedding.ts", "apps/web/src/services/vectorDb.ts"], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "API route for RAG querying with courseId metadata filtering and real Gemini AI response generation", deps: ["apps/web/src/engine/rag.ts", "apps/web/src/services/embedding.ts", "apps/web/src/services/vectorDb.ts", "apps/web/src/services/llm.ts"], state: "canonical", last: "sato@2026-08-25" }
  */
 import { NextResponse } from 'next/server';
 import { processRagQuery } from '../../../engine/rag';
 import { embeddingApi } from '../../../services/embedding';
 import { vectorDb } from '../../../services/vectorDb';
+import { GEMINI_MODELS } from '../../../services/llm';
 
 export async function POST(req: Request) {
   try {
@@ -33,12 +34,11 @@ export async function POST(req: Request) {
           return `[Mock Response] Here is a synthesized response for your query.\n\n${prompt}`;
         }
 
-        const systemPrompt = "You are a helpful teaching assistant answering a student's question based on the provided context. If the context does not contain the answer, say you don't know.";
+        const systemPrompt = "You are a helpful computer science teaching assistant answering a student's question based on the provided context. Format your response clearly with Markdown formatting.";
 
         try {
           if (process.env.GEMINI_API_KEY) {
-            const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-            for (const model of geminiModels) {
+            for (const model of GEMINI_MODELS) {
               try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
                 const response = await fetch(url, {
