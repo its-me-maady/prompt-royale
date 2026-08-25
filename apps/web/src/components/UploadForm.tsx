@@ -78,12 +78,12 @@ export default function UploadForm() {
         </div>
 
         <div>
-          <label htmlFor="file" className="block text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">File (Audio or PPT)</label>
+          <label htmlFor="file" className="block text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Course File (PPT, PPTX, PDF, TXT)</label>
           <input
             id="file"
             type="file"
             required
-            accept="audio/*,.ppt,.pptx"
+            accept=".ppt,.pptx,.pdf,.txt,.md,audio/*"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             className="w-full text-sm text-gray-400
               file:mr-4 file:py-3 file:px-6
