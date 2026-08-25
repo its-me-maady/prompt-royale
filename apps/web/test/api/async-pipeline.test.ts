@@ -1,5 +1,5 @@
 /**
- * <!-- agent-notes: { ctx: "P0 TDD red phase for Asynchronous Content Pipeline", deps: ["docs/test-strategy.md"], state: "active", last: "sato@2026-07-29" } -->
+ * <!-- agent-notes: { ctx: "P0 TDD red phase for Asynchronous Content Pipeline", deps: ["docs/test-strategy.md"], state: "active", last: "sato@2026-08-25" } -->
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -12,7 +12,7 @@ import { db } from '../../src/db';
 
 vi.mock('../../src/services/llm', () => ({
   llmService: {
-    generateQuestions: vi.fn(),
+    generateQuestions: vi.fn<any>(),
   },
 }));
 
@@ -57,7 +57,7 @@ describe('Asynchronous Content Pipeline Integration Tests (App Router)', () => {
     const mockQuestions = Array(10).fill({
       question: 'Q?', options: ['A'], answer: 'A'
     });
-    vi.mocked(llmService.generateQuestions).mockResolvedValue(mockQuestions);
+    (llmService.generateQuestions as ReturnType<typeof vi.fn>).mockResolvedValue(mockQuestions);
 
     await workerService.processPendingJobs();
 
