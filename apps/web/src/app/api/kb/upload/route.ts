@@ -12,9 +12,16 @@ const metadataSchema = z.object({
   title: z.string().min(1).max(200)
 });
 
+function sanitizeText(str: string): string {
+  if (!str) return '';
+  // Strip null bytes (\u0000) and unsupported control characters for PostgreSQL text/jsonb
+  return str.replace(/\u0000/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+}
+
 function chunkText(text: string, chunkSize = 800): string[] {
-  if (!text || text.trim().length === 0) return [text || ''];
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const clean = sanitizeText(text);
+  if (!clean || clean.trim().length === 0) return [clean || ''];
+  const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
   const chunks: string[] = [];
   let currentChunk = '';
 
@@ -30,7 +37,7 @@ function chunkText(text: string, chunkSize = 800): string[] {
     chunks.push(currentChunk.trim());
   }
 
-  return chunks.length > 0 ? chunks : [text];
+  return chunks.length > 0 ? chunks : [clean];
 }
 
 export async function POST(req: Request) {
@@ -77,9 +84,9 @@ export async function POST(req: Request) {
 
     try {
       if (isAudio) {
-        extractedText = await transcribeAudio(file);
+        extractedText = sanitizeText(await transcribeAudio(file));
       } else {
-        extractedText = await parseDocument(file);
+        extractedText = sanitizeText(await parseDocument(file));
       }
     } catch (error) {
       console.error('Extraction failed:', error);
