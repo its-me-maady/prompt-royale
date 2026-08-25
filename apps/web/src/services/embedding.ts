@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Optimized Gemini vector embeddings service with active model memoization and high concurrency", deps: [], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Optimized Gemini vector embeddings service with 768 outputDimensionality and active model memoization", deps: [], state: "canonical", last: "sato@2026-08-25" }
  */
 
 function generateDeterministicVector(text: string, dim = 768): number[] {
@@ -54,6 +54,7 @@ export const embeddingApi = {
                 body: JSON.stringify({
                   model: `models/${model}`,
                   content: { parts: [{ text: chunk }] },
+                  outputDimensionality: 768,
                 }),
               });
 
@@ -61,7 +62,8 @@ export const embeddingApi = {
                 const data = await response.json();
                 if (data.embedding?.values) {
                   activeEmbeddingModel = model;
-                  return data.embedding.values as number[];
+                  const vals = data.embedding.values as number[];
+                  return vals.slice(0, 768);
                 }
               }
             } catch (e) {}
