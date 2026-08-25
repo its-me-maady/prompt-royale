@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Gemini vector embeddings service using embedContent with concurrent batching", deps: [], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Gemini vector embeddings service using embedContent with model payload assertion", deps: [], state: "canonical", last: "sato@2026-08-25" }
  */
 
 export const embeddingApi = {
@@ -23,27 +23,32 @@ export const embeddingApi = {
       const batchResults = await Promise.all(
         chunkBatch.map(async (chunk) => {
           for (const model of modelsToTry) {
-            try {
-              const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent?key=${apiKey}`;
-              const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  content: { parts: [{ text: chunk }] },
-                }),
-              });
+            // Try v1beta endpoint first, then v1 endpoint
+            const apiVersions = ['v1beta', 'v1'];
+            for (const apiVersion of apiVersions) {
+              try {
+                const url = `https://generativelanguage.googleapis.com/${apiVersion}/models/${model}:embedContent?key=${apiKey}`;
+                const response = await fetch(url, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    model: `models/${model}`,
+                    content: { parts: [{ text: chunk }] },
+                  }),
+                });
 
-              if (response.ok) {
-                const data = await response.json();
-                if (data.embedding?.values) {
-                  return data.embedding.values as number[];
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.embedding?.values) {
+                    return data.embedding.values as number[];
+                  }
+                } else {
+                  const errText = await response.text();
+                  console.warn(`Gemini embedContent failed for ${apiVersion}/${model} (${response.status}):`, errText);
                 }
-              } else {
-                const errText = await response.text();
-                console.warn(`Gemini embedContent failed for ${model} (${response.status}):`, errText);
+              } catch (e) {
+                console.warn(`Gemini embedContent exception for ${apiVersion}/${model}:`, e);
               }
-            } catch (e) {
-              console.warn(`Gemini embedContent exception for ${model}:`, e);
             }
           }
           return new Array(768).fill(0.1);
