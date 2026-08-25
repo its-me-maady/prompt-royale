@@ -36,7 +36,7 @@ export const embeddingApi = {
     if (chunks.length === 0) return [];
 
     const results: number[][] = [];
-    const modelsToTry = ['text-embedding-004', 'embedding-001'];
+    const modelsToTry = ['gemini-embedding-001', 'gemini-embedding-2', 'text-embedding-004', 'embedding-001'];
     const CONCURRENCY = 5;
 
     for (let i = 0; i < chunks.length; i += CONCURRENCY) {
