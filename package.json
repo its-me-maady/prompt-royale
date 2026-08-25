@@ -9,7 +9,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "prepare": "husky"
+    "prepare": "test -d .git && husky || true"
   },
   "dependencies": {
     "next": "14.2.5"
