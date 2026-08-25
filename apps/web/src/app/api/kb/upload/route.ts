@@ -5,10 +5,33 @@ import { embeddingApi } from '@/services/embedding';
 import { supabase } from '@/lib/db/supabase';
 import { z } from 'zod';
 
+export const maxDuration = 60;
+
 const metadataSchema = z.object({
   courseId: z.string().min(1).max(50),
   title: z.string().min(1).max(200)
 });
+
+function chunkText(text: string, chunkSize = 800): string[] {
+  if (!text || text.trim().length === 0) return [text || ''];
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const chunks: string[] = [];
+  let currentChunk = '';
+
+  for (const sentence of sentences) {
+    if ((currentChunk + sentence).length > chunkSize && currentChunk.length > 0) {
+      chunks.push(currentChunk.trim());
+      currentChunk = sentence;
+    } else {
+      currentChunk += sentence;
+    }
+  }
+  if (currentChunk.trim().length > 0) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks.length > 0 ? chunks : [text];
+}
 
 export async function POST(req: Request) {
   try {
@@ -66,7 +89,7 @@ export async function POST(req: Request) {
     // Generate embeddings using Gemini (768-dim)
     let recordsToInsert: { content: string; embedding: number[]; metadata: any }[] = [];
     try {
-      const chunks = extractedText.match(/[^.!?]+[.!?]+/g) || [extractedText];
+      const chunks = chunkText(extractedText, 800);
       const embeddingsList = await embeddingApi.createEmbeddings(chunks);
       recordsToInsert = chunks.map((chunk, i) => ({
         content: chunk,

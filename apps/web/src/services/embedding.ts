@@ -1,8 +1,7 @@
 /**
- * agent-notes: { ctx: "Gemini vector embeddings service with deterministic fallback and clean logging", deps: [], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Optimized Gemini vector embeddings service with active model memoization and high concurrency", deps: [], state: "canonical", last: "sato@2026-08-25" }
  */
 
-// Helper to generate a normalized 768-dim deterministic vector from text
 function generateDeterministicVector(text: string, dim = 768): number[] {
   const vec = new Array(dim).fill(0);
   let hash = 5381;
@@ -14,11 +13,11 @@ function generateDeterministicVector(text: string, dim = 768): number[] {
     vec[index] += (char % 10) / 10 + 0.1;
   }
 
-  // L2 normalize vector
   const norm = Math.sqrt(vec.reduce((sum, val) => sum + val * val, 0)) || 1;
   return vec.map((val) => val / norm);
 }
 
+let activeEmbeddingModel: string | null = null;
 let hasLoggedEmbeddingWarning = false;
 
 export const embeddingApi = {
@@ -36,8 +35,10 @@ export const embeddingApi = {
     if (chunks.length === 0) return [];
 
     const results: number[][] = [];
-    const modelsToTry = ['gemini-embedding-001', 'gemini-embedding-2', 'text-embedding-004', 'embedding-001'];
-    const CONCURRENCY = 5;
+    const modelsToTry = activeEmbeddingModel
+      ? [activeEmbeddingModel]
+      : ['gemini-embedding-001', 'gemini-embedding-2', 'text-embedding-004', 'embedding-001'];
+    const CONCURRENCY = 15;
 
     for (let i = 0; i < chunks.length; i += CONCURRENCY) {
       const chunkBatch = chunks.slice(i, i + CONCURRENCY);
@@ -59,6 +60,7 @@ export const embeddingApi = {
               if (response.ok) {
                 const data = await response.json();
                 if (data.embedding?.values) {
+                  activeEmbeddingModel = model;
                   return data.embedding.values as number[];
                 }
               }
