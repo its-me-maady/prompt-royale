@@ -1,10 +1,11 @@
 /**
- * agent-notes: { ctx: "Interactive Chat Box UI for Student Prompt Lab with RAG context and Gemini restyling", deps: ["apps/web/src/app/api/rag/route.ts", "apps/web/src/app/api/kb/courses/route.ts"], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Interactive Chat Box UI for Student Prompt Lab with Markdown rendering, RAG context, and Gemini restyling", deps: ["apps/web/src/app/api/rag/route.ts", "apps/web/src/app/api/kb/courses/route.ts", "apps/web/src/components/MarkdownRenderer.tsx"], state: "canonical", last: "sato@2026-08-25" }
  */
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabaseClient } from '../../lib/db/supabase-client';
+import { MarkdownRenderer } from '../../components/MarkdownRenderer';
 
 interface ChatMessage {
   id: string;
@@ -245,7 +246,11 @@ export default function PromptLabPage() {
                       : 'bg-slate-950/90 border border-slate-800 text-slate-100 rounded-bl-none shadow-md'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+                  {msg.sender === 'user' ? (
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+                  ) : (
+                    <MarkdownRenderer content={msg.text} />
+                  )}
 
                   {/* Sources Accordion for AI Responses */}
                   {msg.sender === 'assistant' && msg.sources && msg.sources.length > 0 && (
