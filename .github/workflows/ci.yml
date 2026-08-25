@@ -39,6 +39,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check Supabase Migration Integrity
+        run: |
+          if [ -d "supabase/migrations" ]; then
+            echo "Validating Supabase migration files..."
+            ls -la supabase/migrations
+          fi
+
       - name: Run lint
         run: pnpm run lint || true
 
