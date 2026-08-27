@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { llmService } from '../../../../services/llm';
 import { supabase } from '@/lib/db/supabase';
 
+export const dynamic = 'force-dynamic';
+
 // Basic in-memory rate limiter for MVP
 const rateLimit = new Map<string, number>();
 
