@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Vitest unit tests for database-backed Boss Raid Arena page with presence mocks", deps: ["apps/web/src/app/arena/page.tsx", "apps/web/src/lib/db/supabase-client.ts"], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Vitest unit tests for database-backed Boss Raid Arena page with presence mocks", deps: ["apps/web/src/app/arena/page.tsx", "apps/web/src/lib/db/supabase-client.ts"], state: "canonical", last: "sato@2026-08-27" }
  */
 import React from 'react';
 import { render, screen, act, cleanup } from '@testing-library/react';
@@ -112,5 +112,42 @@ describe('Arena Page', () => {
     // We should see the UI
     expect(await screen.findByText(/Test question\?/i)).toBeDefined();
     expect(screen.queryByText(/Connecting to Arena/i)).toBeNull();
+  });
+
+  it('should show error banner when vote API fails', async () => {
+    render(<ArenaPage />);
+
+    // Wait for host election and UI state
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
+
+    // Verify question is loaded
+    expect(await screen.findByText(/Test question\?/i)).toBeDefined();
+
+    // Mock fetch to return error status
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === '/api/arena/vote') {
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          json: async () => ({ error: 'Database transaction failed' })
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ success: true })
+      });
+    });
+
+    // Click Option A (the correct option in our mock question metadata)
+    const optionA = screen.getAllByText('A')[0];
+    await act(async () => {
+      optionA.click();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    // Check if error message is displayed
+    expect(screen.getByText(/Failed to record vote/i)).toBeDefined();
   });
 });

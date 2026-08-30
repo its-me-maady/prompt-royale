@@ -253,7 +253,7 @@ function ArenaInner() {
     });
 
     try {
-      await fetch('/api/arena/vote', {
+      const res = await fetch('/api/arena/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -263,8 +263,12 @@ function ArenaInner() {
           isCorrect
         })
       });
+      if (!res.ok) {
+        setFetchError('Failed to record vote.');
+      }
     } catch (err) {
       console.error('Failed to post vote to DB:', err);
+      setFetchError('Failed to record vote.');
     }
   };
 
@@ -322,6 +326,11 @@ function ArenaInner() {
 
       {/* Arena Content */}
       <main className="flex-1 mt-8 z-10 relative">
+        {fetchError && (
+          <div className="mb-6 p-4 bg-red-950/40 border border-red-500/50 rounded-2xl text-red-300 text-center font-mono text-sm z-50">
+            {fetchError}
+          </div>
+        )}
         {gameState.status === 'victory' && (
           <div className="text-center mt-20">
             <h1 className="text-5xl font-bold text-green-400 mb-4 drop-shadow-[0_0_15px_rgba(74,222,128,0.8)]">

@@ -170,3 +170,30 @@ BEGIN
   END IF;
 END $$;
 
+-- Enable Row Level Security (RLS)
+ALTER TABLE squads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE squad_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE squad_votes ENABLE ROW LEVEL SECURITY;
+
+-- Create Policies to allow client-side anonymous presence read/write access
+DROP POLICY IF EXISTS "Allow public select on squads" ON squads;
+CREATE POLICY "Allow public select on squads" ON squads FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on squads" ON squads;
+CREATE POLICY "Allow public insert on squads" ON squads FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update on squads" ON squads;
+CREATE POLICY "Allow public update on squads" ON squads FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow public select on squad_members" ON squad_members;
+CREATE POLICY "Allow public select on squad_members" ON squad_members FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on squad_members" ON squad_members;
+CREATE POLICY "Allow public insert on squad_members" ON squad_members FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update on squad_members" ON squad_members;
+CREATE POLICY "Allow public update on squad_members" ON squad_members FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow public select on squad_votes" ON squad_votes;
+CREATE POLICY "Allow public select on squad_votes" ON squad_votes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on squad_votes" ON squad_votes;
+CREATE POLICY "Allow public insert on squad_votes" ON squad_votes FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update on squad_votes" ON squad_votes;
+CREATE POLICY "Allow public update on squad_votes" ON squad_votes FOR UPDATE USING (true);
+
