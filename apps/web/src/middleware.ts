@@ -1,9 +1,10 @@
 /**
- * <!-- agent-notes: { ctx: "Edge Rate Limiting & Security Middleware", deps: ["AGENTS.md", "docs/adrs/0011-edge-api-defense-rate-limiting.md"], state: "active", last: "sato@2026-08-25" } -->
+ * <!-- agent-notes: { ctx: "Edge Rate Limiting & Auth Middleware", deps: ["apps/web/src/utils/supabase/middleware.ts"], state: "canonical", last: "sato@2026-08-31" } -->
  */
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { updateSession } from './utils/supabase/middleware';
 
 interface RateLimitRecord {
   count: number;
@@ -21,50 +22,71 @@ export function resetRateLimitStore() {
   rateLimitStore.clear();
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only apply sliding window rate limiting to protected AI endpoints
-  const isProtectedRoute = PROTECTED_AI_ROUTES.some((route) => pathname.startsWith(route));
+  // 1. Edge Authentication validation
+  const isProtectedRoute =
+    pathname.startsWith('/lobby') ||
+    pathname.startsWith('/arena') ||
+    pathname.startsWith('/professor') ||
+    pathname.startsWith('/prompt-lab');
 
-  if (!isProtectedRoute) {
-    return NextResponse.next();
+  let authResponse = NextResponse.next({ request });
+  if (isProtectedRoute) {
+    authResponse = await updateSession(request);
+    // If the auth middleware returned a redirect response, halt and return it
+    if (authResponse.status === 307 || authResponse.status === 302 || authResponse.headers.get('location')) {
+      return authResponse;
+    }
   }
 
-  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
-  const key = `${clientIp}:${pathname}`;
-  const now = Date.now();
+  // 2. AI endpoints rate limiting
+  const isRateLimitedRoute = PROTECTED_AI_ROUTES.some((route) => pathname.startsWith(route));
 
-  const record = rateLimitStore.get(key);
+  if (isRateLimitedRoute) {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+    const key = `${clientIp}:${pathname}`;
+    const now = Date.now();
 
-  if (!record || now > record.resetTime) {
-    rateLimitStore.set(key, {
-      count: 1,
-      resetTime: now + WINDOW_MS,
-    });
-    return NextResponse.next();
+    const record = rateLimitStore.get(key);
+
+    if (!record || now > record.resetTime) {
+      rateLimitStore.set(key, {
+        count: 1,
+        resetTime: now + WINDOW_MS,
+      });
+      return NextResponse.next();
+    }
+
+    if (record.count >= MAX_REQUESTS) {
+      const retryAfterSeconds = Math.ceil((record.resetTime - now) / 1000);
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(retryAfterSeconds),
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    record.count += 1;
+    rateLimitStore.set(key, record);
   }
 
-  if (record.count >= MAX_REQUESTS) {
-    const retryAfterSeconds = Math.ceil((record.resetTime - now) / 1000);
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      {
-        status: 429,
-        headers: {
-          'Retry-After': String(retryAfterSeconds),
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-  }
-
-  record.count += 1;
-  rateLimitStore.set(key, record);
-
-  return NextResponse.next();
+  return authResponse;
 }
 
 export const config = {
-  matcher: ['/api/jobs/upload', '/api/lab/chat'],
+  matcher: [
+    '/api/jobs/upload',
+    '/api/lab/chat',
+    '/lobby/:path*',
+    '/arena/:path*',
+    '/professor/:path*',
+    '/prompt-lab/:path*'
+  ],
 };

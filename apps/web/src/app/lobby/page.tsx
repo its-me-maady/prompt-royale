@@ -31,14 +31,10 @@ function LobbyInner() {
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) {
-          const { data, error } = await supabaseClient.auth.signInAnonymously();
-          if (error) console.error('Auth login error:', error);
-          if (data?.user) {
-            setPlayerId(data.user.id.substring(0, 8));
-          }
-        } else {
+        if (session?.user) {
           setPlayerId(session.user.id.substring(0, 8));
+        } else {
+          setPlayerId(`p-${Math.floor(Math.random() * 1000)}`);
         }
       } catch (err) {
         setPlayerId(`p-${Math.floor(Math.random() * 1000)}`);

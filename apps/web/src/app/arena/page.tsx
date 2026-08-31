@@ -39,19 +39,11 @@ function ArenaInner() {
 
   const channelRef = useRef<any>(null);
 
-  // 1. Initialize anonymous or standard authentication
   useEffect(() => {
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) {
-          const { data, error } = await supabaseClient.auth.signInAnonymously();
-          if (error) console.error('Anonymous login error:', error);
-          if (data?.user) {
-            setPlayerId(data.user.id.substring(0, 8));
-            return;
-          }
-        } else {
+        if (session?.user) {
           setPlayerId(session.user.id.substring(0, 8));
           return;
         }

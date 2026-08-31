@@ -1,0 +1,11 @@
+/**
+ * <!-- agent-notes: { ctx: "Supabase SSR browser client creator", deps: ["@supabase/ssr"], state: "canonical", last: "sato@2026-08-31" } -->
+ */
+import { createBrowserClient } from '@supabase/ssr';
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-anon-key'
+  );
+}
