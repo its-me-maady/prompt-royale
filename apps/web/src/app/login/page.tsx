@@ -1,5 +1,5 @@
 /**
- * <!-- agent-notes: { ctx: "Login page component with guest auth triggers", deps: ["@/lib/db/supabase-client.ts", "next/navigation"], state: "canonical", last: "sato@2026-08-31" } -->
+ * <!-- agent-notes: { ctx: "Login page component with guest and email/password authentication options", deps: ["@/lib/db/supabase-client.ts", "next/navigation"], state: "canonical", last: "sato@2026-08-31" } -->
  */
 
 'use client';
@@ -11,6 +11,10 @@ import { supabaseClient } from '@/lib/db/supabase-client';
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +40,54 @@ function LoginFormContent() {
     }
   };
 
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Please provide both email and password.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: authErr } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (authErr) throw authErr;
+
+      const nextParam = searchParams.get('next');
+      let target = '/lobby';
+      if (nextParam && nextParam.startsWith('/')) {
+        target = nextParam;
+      }
+      router.push(target);
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in.');
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSignUp = async () => {
+    if (!email || !password) {
+      setError('Please provide both email and password.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: authErr } = await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+      if (authErr) throw authErr;
+      setError('Registration successful! Please check your email or try signing in.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign up.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="z-10 max-w-md w-full text-center bg-slate-900/60 backdrop-blur-xl p-8 md:p-10 border border-slate-800 rounded-3xl shadow-2xl">
       <h1 className="text-3xl md:text-4xl font-extrabold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
@@ -51,20 +103,64 @@ function LoginFormContent() {
         </div>
       )}
 
-      <div className="space-y-6">
-        <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800 text-left">
-          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mb-2">Anonymous Guest Entry</p>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Students can enter the study room instantly. Your guest progress is preserved within this browser session cookie.
-          </p>
+      {/* Email Login Form */}
+      <form onSubmit={handleEmailLogin} className="space-y-4 text-left">
+        <div>
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="email@example.com"
+            disabled={loading}
+            className="w-full px-4 py-3 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none transition-all"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            disabled={loading}
+            className="w-full px-4 py-3 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none transition-all"
+          />
         </div>
 
+        <div className="flex gap-4 pt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all disabled:opacity-50"
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={handleEmailSignUp}
+            disabled={loading}
+            className="flex-1 py-3 bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-xl font-bold transition-all disabled:opacity-50"
+          >
+            Sign Up
+          </button>
+        </div>
+      </form>
+
+      <div className="relative flex py-5 items-center">
+        <div className="flex-grow border-t border-slate-800"></div>
+        <span className="flex-shrink mx-4 text-slate-500 text-xs font-bold uppercase tracking-widest">or</span>
+        <div className="flex-grow border-t border-slate-800"></div>
+      </div>
+
+      {/* Guest Login Option */}
+      <div className="space-y-4">
         <button
           onClick={handleGuestLogin}
           disabled={loading}
-          className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+          className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl font-bold transition-all border border-slate-700 disabled:opacity-50"
         >
-          {loading ? 'Entering...' : 'Enter Arena'}
+          Enter as Guest
         </button>
       </div>
     </div>
