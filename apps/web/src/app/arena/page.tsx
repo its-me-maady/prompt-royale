@@ -22,6 +22,7 @@ function ArenaInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const squadId = searchParams.get('squadId') || 'test-squad-1';
+  const courseId = searchParams.get('courseId') || 'CS101';
 
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [playerId, setPlayerId] = useState<string>('');
@@ -181,8 +182,21 @@ function ArenaInner() {
   const fetchQuestion = async (retryCount = 0) => {
     try {
       setFetchError(null);
-      const res = await fetch('/api/arena/revive');
+      let res;
+      if (gameState?.status === 'revive') {
+        res = await fetch('/api/arena/revive');
+      } else {
+        res = await fetch('/api/arena/question', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ courseId, roundNumber }),
+        });
+      }
       const data = await res.json();
+      if (data.error === 'no_course_content') {
+        setFetchError('Upload course material for this course before starting a raid');
+        return;
+      }
       if (data.error) throw new Error(data.error);
 
       setQuestion(data);
@@ -191,7 +205,7 @@ function ArenaInner() {
         event: 'question_update',
         payload: data
       });
-    } catch (e) {
+    } catch (e: any) {
       if (retryCount < 2) {
         setTimeout(() => fetchQuestion(retryCount + 1), 1500);
       } else {
