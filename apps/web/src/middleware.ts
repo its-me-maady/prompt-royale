@@ -16,7 +16,7 @@ const rateLimitStore = new Map<string, RateLimitRecord>();
 const WINDOW_MS = 60 * 1000; // 1 minute window
 const MAX_REQUESTS = 10;     // 10 requests per minute limit for heavy AI endpoints
 
-const PROTECTED_AI_ROUTES = ['/api/jobs/upload', '/api/lab/chat', '/api/kb/upload'];
+const PROTECTED_AI_ROUTES = ['/api/lab/chat', '/api/kb/upload'];
 
 export function resetRateLimitStore() {
   rateLimitStore.clear();
@@ -89,7 +89,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/api/jobs/upload',
     '/api/lab/chat',
     '/api/kb/upload',
     '/lobby/:path*',
