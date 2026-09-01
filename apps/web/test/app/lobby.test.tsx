@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Vitest unit tests for real-time Presence Lobby Page with Next Navigation mock", deps: ["apps/web/src/app/lobby/page.tsx"], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Vitest unit tests for real-time Presence Lobby Page with Next Navigation mock", deps: ["apps/web/src/app/lobby/page.tsx"], state: "canonical", last: "sato@2026-09-01" }
  */
 import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
@@ -49,6 +49,11 @@ vi.mock('@/lib/db/supabase-client', () => {
 describe('Lobby Page', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockImplementation(() => Promise.resolve())
+      }
+    });
   });
 
   afterEach(() => {
@@ -73,10 +78,10 @@ describe('Lobby Page', () => {
     });
   });
 
-  it('should show invite link and handle safe URLs on success', async () => {
+  it('should show invite link, handle safe URLs and copy to clipboard on success', async () => {
     vi.mocked(global.fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ lobbyId: '123', inviteLink: 'https://discord.gg/test' })
+      json: async () => ({ lobbyId: '123' })
     } as Response);
     
     render(<LobbyPage />);
@@ -86,6 +91,13 @@ describe('Lobby Page', () => {
     
     await waitFor(() => {
       expect(screen.getByText(/123/)).toBeDefined();
+    });
+
+    const copyBtn = screen.getByRole('button', { name: /Copy/i });
+    fireEvent.click(copyBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Copied!/i)).toBeDefined();
     });
   });
 });
