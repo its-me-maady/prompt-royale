@@ -48,10 +48,6 @@ async function callGemini(systemPrompt: string, userPrompt: string, isJson = fal
 }
 
 export const llmService = {
-  generateQuestions: async (fileContent: Buffer) => {
-    return [];
-  },
-
   restylePrompt: async (notes: string): Promise<string> => {
     const systemPrompt =
       "You are an expert prompt engineer and study coach. Rewrite and enhance the student's study prompt into a clear, detailed, well-structured prompt designed to elicit deep explanations and key concepts. Output ONLY the enhanced prompt string without commentary.";

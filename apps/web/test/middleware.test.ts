@@ -90,24 +90,24 @@ describe('Edge Rate Limiting & Auth Middleware', () => {
 
   // Existing Rate Limiting Tests
   it('should allow requests below the rate limit threshold for public AI endpoints', async () => {
-    const req = createMockNextRequest('/api/jobs/upload', '1.2.3.4');
+    const req = createMockNextRequest('/api/lab/chat', '1.2.3.4');
     const res = await middleware(req);
 
     expect(res.status).not.toBe(429);
   });
 
-  it('should return 429 Too Many Requests when rate limit is exceeded on /api/jobs/upload', async () => {
+  it('should return 429 Too Many Requests when rate limit is exceeded on /api/lab/chat', async () => {
     const clientIp = '5.6.7.8';
     
     // Send 10 allowed requests (limit is 10 per min)
     for (let i = 0; i < 10; i++) {
-      const req = createMockNextRequest('/api/jobs/upload', clientIp);
+      const req = createMockNextRequest('/api/lab/chat', clientIp);
       const res = await middleware(req);
       expect(res.status).not.toBe(429);
     }
 
     // 11th request should be blocked
-    const excessReq = createMockNextRequest('/api/jobs/upload', clientIp);
+    const excessReq = createMockNextRequest('/api/lab/chat', clientIp);
     const excessRes = await middleware(excessReq);
 
     expect(excessRes.status).toBe(429);
