@@ -1,3 +1,4 @@
+// agent-notes: { ctx: "LLM service for prompt restyling, query expansion, synthesis, revive and grounded quiz generation", deps: [], state: active, last: "sato@2026-09-01" }
 export interface KnowledgeChunk {
   content: string;
   metadata?: Record<string, any>;
@@ -139,6 +140,73 @@ Output strictly in JSON format exactly like this:
       question: 'Which pattern best prevents race conditions in a distributed 60-second game loop?',
       options: ['Pessimistic Locking', 'Host-Client Inversion Model', 'Eventual Consistency', 'Client-side Prediction'],
       correctIndex: 1,
+    };
+  },
+
+  generateQuizQuestion: async (chunks: KnowledgeChunk[], courseId?: string) => {
+    if (!chunks || chunks.length === 0) {
+      return null;
+    }
+
+    const context = chunks.map((c) => c.content).join('\n\n---\n\n');
+    const systemPrompt = `You are a study quiz generator for a course raid arena. You MUST generate a multiple-choice question based strictly and exclusively on the provided course material context.
+Do NOT invent facts or use outside knowledge not present in the context.
+Output strictly in JSON format matching this schema:
+{
+  "question": "Question text...",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "correctIndex": 0
+}`;
+
+    const userPrompt = `Course ID: ${courseId || 'General'}\n\nProvided Course Context:\n${context}\n\nGenerate 1 grounded multiple-choice question based on this context.`;
+
+    const geminiResult = await callGemini(systemPrompt, userPrompt, true);
+    if (geminiResult) {
+      try {
+        const cleanText = geminiResult.replace(/```json/gi, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanText);
+      } catch (e) {}
+    }
+
+    if (process.env.GROQ_API_KEY) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama3-8b-8192',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            response_format: { type: 'json_object' },
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices[0].message.content;
+          const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+          return JSON.parse(cleanText);
+        }
+      } catch (e) {}
+    }
+
+    // Static fallback grounded in the provided chunk text
+    const firstChunkText = chunks[0]?.content || '';
+    const snippet = firstChunkText.slice(0, 80).replace(/\n/g, ' ').trim();
+    return {
+      question: `According to the ${courseId || 'course'} study material: What concept is directly mentioned in the notes regarding "${snippet}..."?`,
+      options: [
+        `${snippet.slice(0, 40)}`,
+        'Quantum Entanglement in Microservices',
+        'Non-relational Stack Overflowing',
+        'Asynchronous Memory Eviction'
+      ],
+      correctIndex: 0,
     };
   },
 };

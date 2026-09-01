@@ -73,7 +73,7 @@ describe('Arena Page', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.0001);
 
     global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url === '/api/arena/revive') {
+      if (url === '/api/arena/revive' || url === '/api/arena/question') {
         return Promise.resolve({
           ok: true,
           json: async () => ({
@@ -132,6 +132,16 @@ describe('Arena Page', () => {
           ok: false,
           status: 500,
           json: async () => ({ error: 'Database transaction failed' })
+        });
+      }
+      if (url === '/api/arena/revive' || url === '/api/arena/question') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            question: 'Test question?',
+            options: ['A', 'B', 'C', 'D'],
+            correctIndex: 0
+          })
         });
       }
       return Promise.resolve({
