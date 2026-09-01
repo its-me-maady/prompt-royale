@@ -12,6 +12,8 @@ interface LobbyMember {
   name: string;
 }
 
+const MIN_SQUAD_SIZE = 2;
+
 function LobbyInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,6 +21,7 @@ function LobbyInner() {
   const supabaseClient = createClient();
 
   const [lobbyId, setLobbyId] = useState<string | null>(urlLobbyId);
+  const [joinInputId, setJoinInputId] = useState<string>('');
   const [inviteLink, setInviteLink] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [members, setMembers] = useState<LobbyMember[]>([]);
@@ -122,8 +125,44 @@ function LobbyInner() {
     }
   };
 
+  const handleJoinLobby = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmedId = joinInputId.trim();
+    if (!trimmedId) {
+      setError('Please enter a valid Lobby ID.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: dbErr } = await supabaseClient
+        .from('squads')
+        .select('id, status')
+        .eq('id', trimmedId)
+        .maybeSingle();
+
+      if (dbErr && dbErr.code !== 'PGRST116') {
+        // Log database query error if any
+      }
+
+      if (data && (data.status === 'victory' || data.status === 'defeat')) {
+        setError('This raid has already ended.');
+        setLoading(false);
+        return;
+      }
+
+      setLobbyId(trimmedId);
+      router.replace(`/lobby?id=${trimmedId}`);
+    } catch (err: any) {
+      setError('Lobby not found. Please check the ID.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startRaid = async () => {
-    if (!lobbyId || !isHost) return;
+    if (!lobbyId || !isHost || members.length < MIN_SQUAD_SIZE) return;
     setLoading(true);
     setError(null);
 
@@ -189,13 +228,44 @@ function LobbyInner() {
         )}
 
         {!lobbyId ? (
-          <button
-            onClick={createLobby}
-            disabled={loading}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-          >
-            {loading ? 'Creating Lobby...' : 'Create Lobby'}
-          </button>
+          <div className="space-y-6">
+            <button
+              onClick={createLobby}
+              disabled={loading}
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+            >
+              {loading ? 'Creating Lobby...' : 'Create Lobby'}
+            </button>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-800"></div>
+              <span className="flex-shrink mx-4 text-slate-500 text-xs font-bold uppercase tracking-widest">or</span>
+              <div className="flex-grow border-t border-slate-800"></div>
+            </div>
+
+            <form onSubmit={handleJoinLobby} className="space-y-4 text-left">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Join Existing Squad
+                </label>
+                <input
+                  type="text"
+                  value={joinInputId}
+                  onChange={(e) => setJoinInputId(e.target.value)}
+                  placeholder="Enter Lobby Code / ID"
+                  disabled={loading}
+                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none transition-all"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !joinInputId.trim()}
+                className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl font-bold transition-all border border-slate-700 disabled:opacity-50"
+              >
+                {loading ? 'Joining...' : 'Join Lobby'}
+              </button>
+            </form>
+          </div>
         ) : (
           <div className="space-y-6 text-left">
             {/* Share link panel */}
@@ -263,10 +333,14 @@ function LobbyInner() {
             {isHost ? (
               <button
                 onClick={startRaid}
-                disabled={loading || members.length === 0}
+                disabled={loading || members.length < MIN_SQUAD_SIZE}
                 className="w-full py-4 mt-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Initializing...' : 'Start Raid'}
+                {loading
+                  ? 'Initializing...'
+                  : members.length < MIN_SQUAD_SIZE
+                  ? `Need at least 2 members to start (${members.length}/2)`
+                  : 'Start Raid'}
               </button>
             ) : (
               <div className="mt-4 p-3.5 bg-indigo-950/20 border border-indigo-900/50 rounded-xl text-center">

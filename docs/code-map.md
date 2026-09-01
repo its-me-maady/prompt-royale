@@ -45,6 +45,7 @@ Structural overview of the PromptRoyale codebase.
 | `src/utils/supabase/server.ts` | `createClient()` | Server-side Supabase client with cookie session context |
 | `src/utils/supabase/middleware.ts` | `updateSession()` | SSR session refresh helper for protected routes |
 | `src/lib/db/supabase-client.ts` | `supabaseClient` | Deprecated for auth (persists to localStorage only) |
+| `src/app/lobby/page.tsx` | `LobbyPage` | Real-time presence squad assembly with `MIN_SQUAD_SIZE = 2` start gate & manual Join by ID input |
 | `src/app/auth/callback/route.ts` | `GET` | PKCE auth code exchange route handler |
 | `src/app/api/kb/upload/route.ts` | `POST` | Course material ingestion route |
 | `src/app/api/arena/question/route.ts` | `POST` | Grounded quiz question generator from KB embeddings |
@@ -55,7 +56,7 @@ Structural overview of the PromptRoyale codebase.
 | Category | Test Files | Tests | Focus Area |
 |----------|-----------|-------|------------|
 | API Routes | 8 | 29 | `/auth/callback`, `/api/arena/question`, `/api/kb/upload`, `/api/rag`, `/api/health`, `/api/lab`, `/api/kb-courses`, `/api/epic3` |
-| App Pages | 5 | 12 | `/arena`, `/lobby`, `/login`, `/`, `/professor` |
+| App Pages | 5 | 15 | `/arena`, `/lobby` (presence, `MIN_SQUAD_SIZE` gate, & join-by-ID), `/login`, `/`, `/professor` |
 | Components | 3 | 12 | `Header`, `PromptLab`, `UploadForm` |
 | Services & Engine | 6 | 30 | `rateLimiter`, `llm`, `game-logic`, `kb`, `rag`, `supabase` |
 | Infrastructure | 1 | 9 | Edge Auth & Rate Limiting Middleware |
