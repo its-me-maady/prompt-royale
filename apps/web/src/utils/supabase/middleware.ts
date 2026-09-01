@@ -40,9 +40,13 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/lobby') ||
     pathname.startsWith('/arena') ||
     pathname.startsWith('/professor') ||
-    pathname.startsWith('/prompt-lab');
+    pathname.startsWith('/prompt-lab') ||
+    pathname.startsWith('/api/kb/upload');
 
   if (!user && isProtectedRoute && !pathname.startsWith('/login')) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', pathname + request.nextUrl.search);

@@ -1,3 +1,4 @@
+// agent-notes: { ctx: "UploadForm component for uploading course materials to knowledge base", deps: [], state: active, last: "sato@2026-09-01" }
 'use client';
 
 import { useState } from 'react';
@@ -23,9 +24,6 @@ export default function UploadForm() {
     try {
       const res = await fetch('/api/kb/upload', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_SECRET_TOKEN || 'dev-token'}`
-        },
         body: formData,
       });
 
