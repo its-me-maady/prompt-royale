@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "KB ingestion API test suite for audio and document upload", deps: ["apps/web/src/services/embedding.ts"], state: "canonical", last: "grace@2026-08-21" }
+ * agent-notes: { ctx: "KB ingestion API test suite for audio and document upload", deps: ["apps/web/src/services/embedding.ts"], state: "canonical", last: "sato@2026-09-01" }
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -10,6 +10,14 @@ const mockGenerateEmbeddings = vi.fn();
 const mockSupabaseInsert = vi.fn();
 
 // Mock modules - using abstract placeholder paths to be adapted during implementation
+vi.mock('@/utils/supabase/server', () => ({
+  createClient: () => ({
+    auth: {
+      getUser: () => Promise.resolve({ data: { user: { id: 'test-user-123' } }, error: null })
+    }
+  })
+}));
+
 vi.mock('@/lib/ai/groq', () => ({
   transcribeAudio: (...args: any[]) => mockTranscribeAudio(...args)
 }));

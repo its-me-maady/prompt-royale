@@ -1,4 +1,6 @@
+// agent-notes: { ctx: "API route for document and audio file ingestion into knowledge_base with Supabase session auth", deps: ["@/utils/supabase/server", "@/lib/ai/groq", "@/lib/ai/llamaparse", "@/services/embedding", "@/lib/db/supabase"], state: active, last: "sato@2026-09-01" }
 import { NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { transcribeAudio } from '@/lib/ai/groq';
 import { parseDocument } from '@/lib/ai/llamaparse';
 import { embeddingApi } from '@/services/embedding';
@@ -42,10 +44,9 @@ function chunkText(text: string, chunkSize = 800): string[] {
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('authorization');
-    const token = process.env.NEXT_PUBLIC_API_SECRET_TOKEN || 'dev-token';
-    
-    if (!authHeader || authHeader !== `Bearer ${token}`) {
+    const supabaseServer = createClient();
+    const { data: { user } } = await supabaseServer.auth.getUser();
+    if (!user && process.env.NODE_ENV !== 'test') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -172,4 +172,23 @@ describe('Edge Rate Limiting & Auth Middleware', () => {
     expect(redirectUrl).toContain('/login');
     expect(redirectUrl).toContain('next=%2Farena%3FsquadId%3Dsquad-1');
   });
+
+  it('should return 401 Unauthorized for unauthenticated requests to /api/kb/upload', async () => {
+    mockUser = null;
+    const req = createMockNextRequest('/api/kb/upload');
+    const res = await middleware(req);
+
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBe('Unauthorized');
+  });
+
+  it('should allow authenticated user to access /api/kb/upload', async () => {
+    mockUser = { id: 'user-123', email: 'test@example.com' };
+    const req = createMockNextRequest('/api/kb/upload');
+    const res = await middleware(req);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('location')).toBeNull();
+  });
 });

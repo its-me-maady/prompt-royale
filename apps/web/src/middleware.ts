@@ -16,7 +16,7 @@ const rateLimitStore = new Map<string, RateLimitRecord>();
 const WINDOW_MS = 60 * 1000; // 1 minute window
 const MAX_REQUESTS = 10;     // 10 requests per minute limit for heavy AI endpoints
 
-const PROTECTED_AI_ROUTES = ['/api/jobs/upload', '/api/lab/chat'];
+const PROTECTED_AI_ROUTES = ['/api/jobs/upload', '/api/lab/chat', '/api/kb/upload'];
 
 export function resetRateLimitStore() {
   rateLimitStore.clear();
@@ -30,13 +30,19 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/lobby') ||
     pathname.startsWith('/arena') ||
     pathname.startsWith('/professor') ||
-    pathname.startsWith('/prompt-lab');
+    pathname.startsWith('/prompt-lab') ||
+    pathname.startsWith('/api/kb/upload');
 
   let authResponse = NextResponse.next({ request });
   if (isProtectedRoute) {
     authResponse = await updateSession(request);
-    // If the auth middleware returned a redirect response, halt and return it
-    if (authResponse.status === 307 || authResponse.status === 302 || authResponse.headers.get('location')) {
+    // If the auth middleware returned a redirect or error response, halt and return it
+    if (
+      authResponse.status === 401 ||
+      authResponse.status === 307 ||
+      authResponse.status === 302 ||
+      authResponse.headers.get('location')
+    ) {
       return authResponse;
     }
   }
@@ -56,7 +62,7 @@ export async function middleware(request: NextRequest) {
         count: 1,
         resetTime: now + WINDOW_MS,
       });
-      return NextResponse.next();
+      return authResponse;
     }
 
     if (record.count >= MAX_REQUESTS) {
@@ -75,6 +81,7 @@ export async function middleware(request: NextRequest) {
 
     record.count += 1;
     rateLimitStore.set(key, record);
+    return authResponse;
   }
 
   return authResponse;
@@ -84,6 +91,7 @@ export const config = {
   matcher: [
     '/api/jobs/upload',
     '/api/lab/chat',
+    '/api/kb/upload',
     '/lobby/:path*',
     '/arena/:path*',
     '/professor/:path*',
