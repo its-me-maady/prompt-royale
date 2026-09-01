@@ -11,7 +11,7 @@ interface RateLimitRecord {
   resetTime: number;
 }
 
-const rateLimitStore = new Map<string, RateLimitRecord>();
+import { rateLimiter } from './services/rateLimiter';
 
 const WINDOW_MS = 60 * 1000; // 1 minute window
 const MAX_REQUESTS = 10;     // 10 requests per minute limit for heavy AI endpoints
@@ -19,7 +19,7 @@ const MAX_REQUESTS = 10;     // 10 requests per minute limit for heavy AI endpoi
 const PROTECTED_AI_ROUTES = ['/api/lab/chat', '/api/kb/upload'];
 
 export function resetRateLimitStore() {
-  rateLimitStore.clear();
+  rateLimiter.resetFallbackStore();
 }
 
 export async function middleware(request: NextRequest) {
@@ -53,34 +53,22 @@ export async function middleware(request: NextRequest) {
   if (isRateLimitedRoute) {
     const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
     const key = `${clientIp}:${pathname}`;
-    const now = Date.now();
 
-    const record = rateLimitStore.get(key);
+    const limitResult = await rateLimiter.checkRateLimit(key, MAX_REQUESTS, WINDOW_MS);
 
-    if (!record || now > record.resetTime) {
-      rateLimitStore.set(key, {
-        count: 1,
-        resetTime: now + WINDOW_MS,
-      });
-      return authResponse;
-    }
-
-    if (record.count >= MAX_REQUESTS) {
-      const retryAfterSeconds = Math.ceil((record.resetTime - now) / 1000);
+    if (!limitResult.allowed) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         {
           status: 429,
           headers: {
-            'Retry-After': String(retryAfterSeconds),
+            'Retry-After': String(limitResult.retryAfter),
             'Content-Type': 'application/json',
           },
         }
       );
     }
 
-    record.count += 1;
-    rateLimitStore.set(key, record);
     return authResponse;
   }
 
