@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Squad Lobby page with real-time Supabase Presence slot sync and redirection", deps: ["apps/web/src/app/lobby/page.tsx", "apps/web/src/lib/db/supabase-client.ts"], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Squad Lobby page with real-time Supabase Presence slot sync and redirection", deps: ["apps/web/src/app/lobby/page.tsx", "apps/web/src/lib/db/supabase-client.ts"], state: "canonical", last: "sato@2026-09-01" }
  */
 'use client';
 
@@ -19,6 +19,7 @@ function LobbyInner() {
 
   const [lobbyId, setLobbyId] = useState<string | null>(urlLobbyId);
   const [inviteLink, setInviteLink] = useState<string>('');
+  const [copied, setCopied] = useState(false);
   const [members, setMembers] = useState<LobbyMember[]>([]);
   const [playerId, setPlayerId] = useState<string>('');
   const [isHost, setIsHost] = useState(false);
@@ -156,6 +157,16 @@ function LobbyInner() {
     }
   };
 
+  const copyInviteLink = () => {
+    if (inviteLink) {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(inviteLink);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const isSafeLink = inviteLink.startsWith('http://') || inviteLink.startsWith('https://');
 
   return (
@@ -187,19 +198,29 @@ function LobbyInner() {
         ) : (
           <div className="space-y-6 text-left">
             {/* Share link panel */}
-            <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800">
-              <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mb-2">Share Invite Link</p>
-              {isSafeLink ? (
-                <a
-                  href={inviteLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block font-semibold text-slate-200 hover:text-indigo-400 underline text-sm break-all"
+            <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
+              <div className="overflow-hidden">
+                <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mb-1">Share Invite Link</p>
+                {isSafeLink ? (
+                  <a
+                    href={inviteLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block font-semibold text-slate-200 hover:text-indigo-400 underline text-sm break-all"
+                  >
+                    {inviteLink}
+                  </a>
+                ) : (
+                  <p className="text-red-400 text-sm">Invalid invite link configuration.</p>
+                )}
+              </div>
+              {isSafeLink && (
+                <button
+                  onClick={copyInviteLink}
+                  className="px-3 py-1.5 bg-indigo-900/60 hover:bg-indigo-800 border border-indigo-700/50 text-indigo-200 rounded-lg text-xs font-semibold shrink-0 transition-colors"
                 >
-                  {inviteLink}
-                </a>
-              ) : (
-                <p className="text-red-400 text-sm">Invalid invite link configuration.</p>
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
               )}
             </div>
 
