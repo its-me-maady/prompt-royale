@@ -1,10 +1,10 @@
 /**
- * agent-notes: { ctx: "Interactive Chat Box UI for Student Prompt Lab with Markdown rendering, RAG context, and Gemini restyling", deps: ["apps/web/src/app/api/rag/route.ts", "apps/web/src/app/api/kb/courses/route.ts", "apps/web/src/components/MarkdownRenderer.tsx"], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Interactive Chat Box UI for Student Prompt Lab with Markdown rendering, RAG context, and Gemini restyling", deps: ["apps/web/src/app/api/rag/route.ts", "apps/web/src/app/api/kb/courses/route.ts", "apps/web/src/components/MarkdownRenderer.tsx", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-01" }
  */
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { supabaseClient } from '../../lib/db/supabase-client';
+import { createClient } from '@/utils/supabase/client';
 import { MarkdownRenderer } from '../../components/MarkdownRenderer';
 
 interface ChatMessage {
@@ -17,6 +17,7 @@ interface ChatMessage {
 }
 
 export default function PromptLabPage() {
+  const supabaseClient = createClient();
   const [prompt, setPrompt] = useState('');
   const [courses, setCourses] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('all');

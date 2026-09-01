@@ -6,3 +6,5 @@ build
 .env*.local
 coverage
 *.tsbuildinfo
+prompt.md
+mvp-readiness-agent-prompt.md

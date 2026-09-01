@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Real-time synchronized Boss Raid Arena with database-authoritative state resolution and dynamic questioning", deps: ["apps/web/src/app/api/arena/vote/route.ts", "apps/web/src/app/api/arena/resolve/route.ts", "apps/web/src/lib/db/supabase-client.ts"], state: "canonical", last: "sato@2026-08-25" }
+ * agent-notes: { ctx: "Real-time synchronized Boss Raid Arena with database-authoritative state resolution and dynamic questioning", deps: ["apps/web/src/app/api/arena/vote/route.ts", "apps/web/src/app/api/arena/resolve/route.ts", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-01" }
  */
 'use client';
 
@@ -11,7 +11,7 @@ import {
   processRevive,
   PlayerVote,
 } from '../../engine/game-logic';
-import { supabaseClient } from "@/lib/db/supabase-client";
+import { createClient } from '@/utils/supabase/client';
 import { BossHealthBar } from '../../components/arena/BossHealthBar';
 import { PlayerHealthBar } from '../../components/arena/PlayerHealthBar';
 import { VotingOptions } from '../../components/arena/VotingOptions';
@@ -23,6 +23,7 @@ function ArenaInner() {
   const searchParams = useSearchParams();
   const squadId = searchParams.get('squadId') || 'test-squad-1';
   const courseId = searchParams.get('courseId') || 'CS101';
+  const supabaseClient = createClient();
 
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [playerId, setPlayerId] = useState<string>('');

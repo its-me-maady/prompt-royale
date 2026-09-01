@@ -15,12 +15,14 @@ Structural overview of the PromptRoyale codebase.
 ```
 [ Frontend (Next.js App Router) ]
     │
+    ├── /login (Auth Page) ──────────────────► @/utils/supabase/client (Cookie-synced SSR Auth)
     ├── /arena (Raid Quiz Engine) ──────────► Supabase Realtime Broadcast / DB
     ├── /lobby (Squad Assembly) ─────────────► Supabase Realtime Presence
     ├── /professor (Professor Chat & RAG) ───► POST /api/rag / Gemini / Supabase vector
     └── /prompt-lab (Prompt Engineer) ──────► POST /api/prompt-lab/restyle / Gemini
     
-[ API Endpoints ]
+[ Auth & API Endpoints ]
+    ├── GET  /auth/callback ────────────────► Exchange PKCE auth code for cookie session
     ├── POST /api/kb/upload ────────────────► Gemini (Audio) / LlamaParse (Docs) ➔ Supabase KB
     ├── POST /api/arena/question ───────────► RAG Knowledge Search ➔ Gemini Grounded Quiz
     ├── POST /api/arena/resolve ────────────► Supabase RPC (resolve_raid_round)
@@ -31,7 +33,7 @@ Structural overview of the PromptRoyale codebase.
 ## Package / Module Summaries
 
 ### `apps/web` — Next.js Application
-**Purpose:** Core web application hosting the quiz arena, squad lobby, AI professor chat, and KB ingestion.
+**Purpose:** Core web application hosting the quiz arena, squad lobby, AI professor chat, auth callback, and KB ingestion.
 
 | Module | Key Exports / Purpose | Notes |
 |--------|----------------------|-------|
@@ -39,9 +41,11 @@ Structural overview of the PromptRoyale codebase.
 | `src/services/rateLimiter.ts` | `rateLimiter` | Supabase-backed rate limiting with fallback store |
 | `src/services/llm.ts` | `llmService` | Gemini / Groq integrations for quiz, prompt restyling, & revive |
 | `src/services/embedding.ts` | `embeddingApi` | Vector embedding generation for RAG |
+| `src/utils/supabase/client.ts` | `createClient()` | SSR browser client with cookie session context (canonical for auth) |
 | `src/utils/supabase/server.ts` | `createClient()` | Server-side Supabase client with cookie session context |
 | `src/utils/supabase/middleware.ts` | `updateSession()` | SSR session refresh helper for protected routes |
-| `src/lib/db/supabase.ts` | `supabase` | Supabase JS client binding |
+| `src/lib/db/supabase-client.ts` | `supabaseClient` | Deprecated for auth (persists to localStorage only) |
+| `src/app/auth/callback/route.ts` | `GET` | PKCE auth code exchange route handler |
 | `src/app/api/kb/upload/route.ts` | `POST` | Course material ingestion route |
 | `src/app/api/arena/question/route.ts` | `POST` | Grounded quiz question generator from KB embeddings |
 | `src/app/api/arena/resolve/route.ts` | `POST` | Raid round resolution triggering RPC |
@@ -50,7 +54,7 @@ Structural overview of the PromptRoyale codebase.
 
 | Category | Test Files | Tests | Focus Area |
 |----------|-----------|-------|------------|
-| API Routes | 7 | 25 | `/api/arena/question`, `/api/kb/upload`, `/api/rag`, `/api/health`, `/api/lab`, `/api/kb-courses`, `/api/epic3` |
+| API Routes | 8 | 29 | `/auth/callback`, `/api/arena/question`, `/api/kb/upload`, `/api/rag`, `/api/health`, `/api/lab`, `/api/kb-courses`, `/api/epic3` |
 | App Pages | 5 | 12 | `/arena`, `/lobby`, `/login`, `/`, `/professor` |
 | Components | 3 | 12 | `Header`, `PromptLab`, `UploadForm` |
 | Services & Engine | 6 | 30 | `rateLimiter`, `llm`, `game-logic`, `kb`, `rag`, `supabase` |

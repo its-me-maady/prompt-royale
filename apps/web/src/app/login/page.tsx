@@ -1,16 +1,17 @@
 /**
- * <!-- agent-notes: { ctx: "Login page component with guest and email/password authentication options", deps: ["@/lib/db/supabase-client.ts", "next/navigation"], state: "canonical", last: "sato@2026-08-31" } -->
+ * <!-- agent-notes: { ctx: "Login page component with cookie-based SSR auth session creation and guest login", deps: ["@/utils/supabase/client", "next/navigation"], state: "canonical", last: "sato@2026-09-01" } -->
  */
 
 'use client';
 
 import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabaseClient } from '@/lib/db/supabase-client';
+import { createClient } from '@/utils/supabase/client';
 
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const supabaseClient = createClient();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,6 +34,7 @@ function LoginFormContent() {
         target = nextParam;
       }
       
+      router.refresh();
       router.push(target);
     } catch (err: any) {
       setError(err.message || 'Failed to authenticate.');
@@ -60,6 +62,7 @@ function LoginFormContent() {
       if (nextParam && nextParam.startsWith('/')) {
         target = nextParam;
       }
+      router.refresh();
       router.push(target);
     } catch (err: any) {
       setError(err.message || 'Failed to sign in.');
@@ -75,9 +78,16 @@ function LoginFormContent() {
     setLoading(true);
     setError(null);
     try {
+      const emailRedirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : 'http://localhost:3000/auth/callback';
+
       const { error: authErr } = await supabaseClient.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          emailRedirectTo
+        }
       });
       if (authErr) throw authErr;
       setError('Registration successful! Please check your email or try signing in.');

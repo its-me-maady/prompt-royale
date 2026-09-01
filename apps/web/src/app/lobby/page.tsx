@@ -1,11 +1,11 @@
 /**
- * agent-notes: { ctx: "Squad Lobby page with real-time Supabase Presence slot sync and redirection", deps: ["apps/web/src/app/lobby/page.tsx", "apps/web/src/lib/db/supabase-client.ts"], state: "canonical", last: "sato@2026-09-01" }
+ * agent-notes: { ctx: "Squad Lobby page with real-time Supabase Presence slot sync and redirection", deps: ["apps/web/src/app/lobby/page.tsx", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-01" }
  */
 'use client';
 
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { supabaseClient } from '@/lib/db/supabase-client';
+import { createClient } from '@/utils/supabase/client';
 
 interface LobbyMember {
   playerId: string;
@@ -16,6 +16,7 @@ function LobbyInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlLobbyId = searchParams.get('id');
+  const supabaseClient = createClient();
 
   const [lobbyId, setLobbyId] = useState<string | null>(urlLobbyId);
   const [inviteLink, setInviteLink] = useState<string>('');

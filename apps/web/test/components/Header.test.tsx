@@ -1,5 +1,5 @@
 /**
- * <!-- agent-notes: { ctx: "P0 TDD red phase, coverage veto, test strategy owner", deps: ["apps/web/src/components/Header.tsx", "apps/web/src/lib/db/supabase-client.ts"], state: canonical, last: "tara@2026-08-31", key: ["header component tests"] } -->
+ * <!-- agent-notes: { ctx: "Vitest unit tests for Header component with cookie-based SSR browser client auth", deps: ["apps/web/src/components/Header.tsx", "apps/web/src/utils/supabase/client.ts"], state: canonical, last: "sato@2026-09-01", key: ["header component tests"] } -->
  */
 import React from 'react';
 import { render, screen, act, cleanup } from '@testing-library/react';
@@ -10,8 +10,8 @@ let mockSessionUser: any = null;
 let mockOnAuthStateChangeCallback: any = null;
 const mockSignOut = vi.fn().mockResolvedValue({ error: null });
 
-vi.mock('@/lib/db/supabase-client', () => ({
-  supabaseClient: {
+vi.mock('@/utils/supabase/client', () => ({
+  createClient: () => ({
     auth: {
       getSession: () => Promise.resolve({ data: { session: mockSessionUser ? { user: mockSessionUser } : null }, error: null }),
       onAuthStateChange: (callback: any) => {
@@ -20,13 +20,14 @@ vi.mock('@/lib/db/supabase-client', () => ({
       },
       signOut: () => mockSignOut(),
     },
-  },
+  })
 }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
   useRouter: () => ({
     push: vi.fn(),
+    refresh: vi.fn(),
   }),
 }));
 
