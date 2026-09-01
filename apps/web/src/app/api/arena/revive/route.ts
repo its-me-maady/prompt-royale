@@ -1,24 +1,20 @@
+// agent-notes: { ctx: "API route for reviving wiped squad with taunting boss questions", deps: ["apps/web/src/services/llm.ts", "apps/web/src/services/rateLimiter.ts"], state: active, last: "sato@2026-09-01" }
 import { NextRequest, NextResponse } from 'next/server';
 import { llmService } from '../../../../services/llm';
-import { supabase } from '@/lib/db/supabase';
+import { rateLimiter } from '../../../../services/rateLimiter';
 
 export const dynamic = 'force-dynamic';
 
-// Basic in-memory rate limiter for MVP
-const rateLimit = new Map<string, number>();
-
 export async function GET(req: NextRequest) {
   try {
-    // 1. Rate Limiting (Simple IP-based for MVP)
-    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
-    const now = Date.now();
-    const lastRequest = rateLimit.get(ip) || 0;
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+    const key = `revive:${ip}`;
     
     // 1 request per 5 seconds
-    if (now - lastRequest < 5000) {
+    const limitResult = await rateLimiter.checkRateLimit(key, 1, 5000);
+    if (!limitResult.allowed) {
        return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
-    rateLimit.set(ip, now);
 
     const question = await llmService.generateReviveQuestion();
     return NextResponse.json(question);

@@ -8,6 +8,13 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Distributed rate limiting table
+CREATE TABLE IF NOT EXISTS rate_limits (
+    key VARCHAR(255) PRIMARY KEY,
+    count INTEGER DEFAULT 1,
+    reset_time BIGINT NOT NULL
+);
+
 CREATE OR REPLACE FUNCTION match_knowledge_base(
     query_embedding vector(768),
     match_threshold float DEFAULT 0.0,
