@@ -1,5 +1,5 @@
 /**
- * <!-- agent-notes: { ctx: "Vitest unit tests for Login Page with email and guest auth support", deps: ["apps/web/src/app/login/page.tsx"], state: "canonical", last: "tara@2026-08-31" } -->
+ * <!-- agent-notes: { ctx: "Vitest unit tests for Login Page with cookie-based SSR browser client auth", deps: ["apps/web/src/app/login/page.tsx", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-01" } -->
  */
 import React from 'react';
 import { render, screen, act, cleanup, fireEvent } from '@testing-library/react';
@@ -7,11 +7,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import LoginPage from '../../src/app/login/page';
 
 const mockPush = vi.fn();
+const mockRefresh = vi.fn();
 const mockGet = vi.fn().mockReturnValue('/lobby?id=squad-1');
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
+    refresh: mockRefresh,
     replace: vi.fn(),
   }),
   useSearchParams: () => ({
@@ -23,14 +25,14 @@ const mockSignInAnonymously = vi.fn().mockResolvedValue({ data: { user: { id: 't
 const mockSignInWithPassword = vi.fn().mockResolvedValue({ data: { user: { id: 'test-user-id', email: 'test@example.com' } }, error: null });
 const mockSignUp = vi.fn().mockResolvedValue({ data: { user: { id: 'new-user-id', email: 'new@example.com' } }, error: null });
 
-vi.mock('@/lib/db/supabase-client', () => ({
-  supabaseClient: {
+vi.mock('@/utils/supabase/client', () => ({
+  createClient: () => ({
     auth: {
       signInAnonymously: () => mockSignInAnonymously(),
       signInWithPassword: (credentials: any) => mockSignInWithPassword(credentials),
       signUp: (credentials: any) => mockSignUp(credentials),
     },
-  },
+  })
 }));
 
 describe('Login Page', () => {
@@ -51,7 +53,7 @@ describe('Login Page', () => {
     expect(screen.getByRole('button', { name: /Enter as Guest/i })).toBeDefined();
   });
 
-  it('should trigger anonymous login on guest button click and redirect user', async () => {
+  it('should trigger anonymous login on guest button click, refresh router, and redirect user', async () => {
     render(<LoginPage />);
     const guestButton = screen.getByRole('button', { name: /Enter as Guest/i });
     
@@ -61,10 +63,11 @@ describe('Login Page', () => {
     });
 
     expect(mockSignInAnonymously).toHaveBeenCalled();
+    expect(mockRefresh).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith('/lobby?id=squad-1');
   });
 
-  it('should trigger sign in with email and password on form submission', async () => {
+  it('should trigger sign in with email and password, refresh router, and redirect user', async () => {
     render(<LoginPage />);
     
     const emailInput = screen.getByPlaceholderText(/email@example.com/i);
@@ -83,10 +86,11 @@ describe('Login Page', () => {
       email: 'user@example.com',
       password: 'password123',
     });
+    expect(mockRefresh).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith('/lobby?id=squad-1');
   });
 
-  it('should trigger sign up with email and password on sign up click', async () => {
+  it('should trigger sign up with email, password, and emailRedirectTo callback option', async () => {
     render(<LoginPage />);
     
     const emailInput = screen.getByPlaceholderText(/email@example.com/i);
@@ -104,6 +108,9 @@ describe('Login Page', () => {
     expect(mockSignUp).toHaveBeenCalledWith({
       email: 'new@example.com',
       password: 'securepwd456',
+      options: {
+        emailRedirectTo: expect.stringContaining('/auth/callback'),
+      },
     });
   });
 });

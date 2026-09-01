@@ -1,5 +1,5 @@
 /**
- * <!-- agent-notes: { ctx: "Header component with live guest/auth session indicators", deps: ["@/lib/db/supabase-client.ts", "next/navigation"], state: "canonical", last: "sato@2026-08-31" } -->
+ * <!-- agent-notes: { ctx: "Header component with live guest/auth session indicators", deps: ["@/utils/supabase/client", "next/navigation"], state: "canonical", last: "sato@2026-09-01" } -->
  */
 
 "use client";
@@ -7,11 +7,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { supabaseClient } from '@/lib/db/supabase-client';
+import { createClient } from '@/utils/supabase/client';
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const supabaseClient = createClient();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function Header() {
 
   const handleSignOut = async () => {
     await supabaseClient.auth.signOut();
+    router.refresh();
     router.push('/login');
   };
 

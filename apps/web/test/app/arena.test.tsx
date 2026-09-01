@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Vitest unit tests for database-backed Boss Raid Arena page with presence mocks", deps: ["apps/web/src/app/arena/page.tsx", "apps/web/src/lib/db/supabase-client.ts"], state: "canonical", last: "sato@2026-08-27" }
+ * agent-notes: { ctx: "Vitest unit tests for database-backed Boss Raid Arena page with presence mocks", deps: ["apps/web/src/app/arena/page.tsx", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-01" }
  */
 import React from 'react';
 import { render, screen, act, cleanup } from '@testing-library/react';
@@ -20,7 +20,7 @@ vi.mock('next/navigation', () => {
   };
 });
 
-vi.mock('@/lib/db/supabase-client', () => {
+vi.mock('@/utils/supabase/client', () => {
   let presenceCallback: Function | null = null;
   
   const channelMock: any = {
@@ -57,14 +57,14 @@ vi.mock('@/lib/db/supabase-client', () => {
   };
 
   return {
-    supabaseClient: {
+    createClient: () => ({
       auth: {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         signInAnonymously: () => Promise.resolve({ data: { user: { id: 'p1' } }, error: null })
       },
       channel: () => channelMock,
       from: () => dbMock
-    }
+    })
   };
 });
 
