@@ -1,13 +1,9 @@
--- ==============================================================================
--- REFERENCE / MANUAL FALLBACK SCHEMA (ADR-0010)
--- 
--- Canonical authoritative migrations are versioned under `supabase/migrations/`.
--- Use this file only for manual copy-paste into the Supabase SQL Editor fallback.
--- Automated CI/CD pipelines apply changes from `supabase/migrations/*.sql`.
--- ==============================================================================
+-- Supabase Initial Schema Migration (ADR-0010)
+-- agent-notes: { ctx: "Initial Database Migration Schema for Prompt Royale", deps: ["docs/adrs/0010-database-migration-isolation.md"], state: "canonical", last: "sato@2026-09-02" }
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Knowledge Base Table for RAG embeddings
 CREATE TABLE IF NOT EXISTS knowledge_base (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     content TEXT,
@@ -16,13 +12,14 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Distributed rate limiting table
+-- Distributed Rate Limiting Table
 CREATE TABLE IF NOT EXISTS rate_limits (
     key VARCHAR(255) PRIMARY KEY,
     count INTEGER DEFAULT 1,
     reset_time BIGINT NOT NULL
 );
 
+-- RAG Vector Match RPC Function
 CREATE OR REPLACE FUNCTION match_knowledge_base(
     query_embedding vector(768),
     match_threshold float DEFAULT 0.0,
@@ -51,7 +48,7 @@ BEGIN
 END;
 $$;
 
--- Squads table storing game state
+-- Squads Table storing game state
 CREATE TABLE IF NOT EXISTS squads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     status VARCHAR(50) DEFAULT 'lobby' NOT NULL, -- 'lobby' | 'active' | 'victory' | 'defeat' | 'revive'
@@ -60,7 +57,7 @@ CREATE TABLE IF NOT EXISTS squads (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Squad members table tracking health and status
+-- Squad Members Table tracking health and status
 CREATE TABLE IF NOT EXISTS squad_members (
     squad_id UUID REFERENCES squads(id) ON DELETE CASCADE,
     player_id VARCHAR(100) NOT NULL,
@@ -70,7 +67,7 @@ CREATE TABLE IF NOT EXISTS squad_members (
     PRIMARY KEY (squad_id, player_id)
 );
 
--- Ephemeral squad votes table for round answers
+-- Ephemeral Squad Votes Table for round answers
 CREATE TABLE IF NOT EXISTS squad_votes (
     squad_id UUID REFERENCES squads(id) ON DELETE CASCADE,
     player_id VARCHAR(100) NOT NULL,
@@ -80,7 +77,7 @@ CREATE TABLE IF NOT EXISTS squad_votes (
     PRIMARY KEY (squad_id, player_id, round_number)
 );
 
--- Resolve round RPC function
+-- Resolve Round RPC Function
 CREATE OR REPLACE FUNCTION resolve_raid_round(
     target_squad_id UUID,
     current_round INTEGER
@@ -211,4 +208,3 @@ DROP POLICY IF EXISTS "Allow public insert on squad_votes" ON squad_votes;
 CREATE POLICY "Allow public insert on squad_votes" ON squad_votes FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "Allow public update on squad_votes" ON squad_votes;
 CREATE POLICY "Allow public update on squad_votes" ON squad_votes FOR UPDATE USING (true);
-

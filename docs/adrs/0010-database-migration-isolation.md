@@ -6,7 +6,7 @@ agent-notes: { ctx: "Database Migration & Schema Isolation Strategy", deps: ["AG
 
 ## Status
 
-Accepted
+Implemented (Pipeline active in `supabase/migrations/`, `.github/workflows/ci.yml`, and `.github/workflows/deploy-production.yml`; requires `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` repository secrets for live automated push)
 
 ## Context
 

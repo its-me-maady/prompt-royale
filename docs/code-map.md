@@ -50,6 +50,8 @@ Structural overview of the PromptRoyale codebase.
 | `src/app/api/kb/upload/route.ts` | `POST` | Course material ingestion route |
 | `src/app/api/arena/question/route.ts` | `POST` | Grounded quiz question generator from KB embeddings |
 | `src/app/api/arena/resolve/route.ts` | `POST` | Raid round resolution triggering RPC |
+| `supabase/migrations/` | `*.sql` | Authoritative versioned SQL database migrations (ADR-0010) |
+| `supabase/config.toml` | Config | Supabase CLI project configuration |
 
 ## Test Inventory
 

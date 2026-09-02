@@ -1,0 +1,17 @@
+# Supabase Project Configuration (ADR-0010)
+# agent-notes: { ctx: "Supabase CLI project configuration for migration management", deps: [], state: "canonical", last: "sato@2026-09-02" }
+
+project_id = "prompt-royale"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+shadow_port = 54320
+
+[studio]
+enabled = true
+port = 54323
