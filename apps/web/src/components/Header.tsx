@@ -67,6 +67,8 @@ export default function Header() {
                   <Link 
                     key={link.name}
                     href={link.href} 
+                    // Disable prefetching on auth-gated links so client Router Cache does not store pre-login 307 redirects to /login
+                    prefetch={false}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                       isActive ? 'text-white bg-gray-800 shadow-sm' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                     }`}
