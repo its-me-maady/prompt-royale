@@ -50,7 +50,12 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', pathname + request.nextUrl.search);
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+
+    // Prevent Next.js Router Cache & browser disk cache from storing pre-login redirects for protected routes
+    redirectResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    redirectResponse.headers.set('x-middleware-cache', 'no-cache');
+    return redirectResponse;
   }
 
   return supabaseResponse;

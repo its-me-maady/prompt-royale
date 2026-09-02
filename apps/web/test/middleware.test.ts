@@ -141,7 +141,7 @@ describe('Edge Rate Limiting & Auth Middleware', () => {
   });
 
   // New Edge Auth Verification Tests
-  it('should redirect unauthenticated user to /login with next param when accessing protected page /lobby', async () => {
+  it('should redirect unauthenticated user to /login with next param and no-store Cache-Control header when accessing protected page /lobby', async () => {
     mockUser = null; // Unauthenticated
     const req = createMockNextRequest('/lobby?id=squad-1');
     const res = await middleware(req);
@@ -151,6 +151,7 @@ describe('Edge Rate Limiting & Auth Middleware', () => {
     const redirectUrl = res.headers.get('location');
     expect(redirectUrl).toContain('/login');
     expect(redirectUrl).toContain('next=%2Flobby%3Fid%3Dsquad-1');
+    expect(res.headers.get('cache-control')).toContain('no-store');
   });
 
   it('should allow authenticated user to access protected page /lobby without redirect', async () => {

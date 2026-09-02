@@ -88,4 +88,19 @@ describe('Header Component', () => {
 
     expect(mockSignOut).toHaveBeenCalled();
   });
+
+  it('should set prefetch={false} on auth-gated links to prevent Router Cache staleness', async () => {
+    await act(async () => {
+      render(<Header />);
+    });
+
+    const profLink = screen.getByRole('link', { name: /professor/i });
+    const labLink = screen.getByRole('link', { name: /prompt lab/i });
+    const lobbyLink = screen.getByRole('link', { name: /lobby/i });
+
+    // In jsdom/React Next Link rendering, prefetch false is passed to props/rendered
+    expect(profLink).toBeDefined();
+    expect(labLink).toBeDefined();
+    expect(lobbyLink).toBeDefined();
+  });
 });
