@@ -56,7 +56,9 @@ function LobbyInner() {
     setInviteLink(`${base}/lobby?id=${lobbyId}`);
 
     // Join Presence Channel
-    const channel = supabaseClient.channel(`lobby-${lobbyId}`);
+    const channel = supabaseClient.channel(`lobby-${lobbyId}`, {
+      config: { presence: { key: playerId } }
+    });
     channelRef.current = channel;
 
     channel
