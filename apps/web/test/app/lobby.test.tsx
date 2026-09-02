@@ -25,6 +25,7 @@ vi.mock('next/navigation', () => {
 let mockPresenceState: any = {};
 let mockSquadStatus: string | null = null;
 let presenceCallback: Function | null = null;
+const mockChannel = vi.fn();
 
 vi.mock('@/utils/supabase/client', () => {
   const channelMock = {
@@ -37,8 +38,10 @@ vi.mock('@/utils/supabase/client', () => {
     }),
     subscribe: vi.fn().mockImplementation((callback) => {
       if (typeof callback === 'function') callback('SUBSCRIBED');
-      if (presenceCallback) {
-        setTimeout(() => presenceCallback?.(), 0);
+      const cb = presenceCallback;
+      if (cb) {
+        presenceCallback = null;
+        setTimeout(() => cb(), 0);
       }
       return channelMock;
     }),
@@ -53,7 +56,10 @@ vi.mock('@/utils/supabase/client', () => {
         getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'p1-user-id' } } }, error: null }),
         signInAnonymously: vi.fn().mockResolvedValue({ data: { user: { id: 'p1-user-id' } }, error: null })
       },
-      channel: vi.fn().mockReturnValue(channelMock),
+      channel: (name: string, config?: any) => {
+        mockChannel(name, config);
+        return channelMock;
+      },
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
@@ -186,5 +192,47 @@ describe('Lobby Page', () => {
 
     const startBtn = screen.getByRole('button', { name: /Start Raid/i }) as HTMLButtonElement;
     expect(startBtn.disabled).toBe(false);
+  });
+
+  it('should initialize presence channel with explicit presence key tied to playerId', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ lobbyId: 'squad-123' })
+    } as Response);
+
+    render(<LobbyPage />);
+
+    const createBtn = screen.getByRole('button', { name: /Create Lobby/i });
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(mockChannel).toHaveBeenCalledWith(
+        'lobby-squad-123',
+        { config: { presence: { key: 'p1-user-' } } }
+      );
+    });
+  });
+
+  it('should render waiting message for non-host members when another player is host', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ lobbyId: 'squad-123' })
+    } as Response);
+
+    // p0-alpha comes before p1-user- alphabetically, making p0-alpha host
+    mockPresenceState = {
+      'p0-alpha': [{ name: 'Alpha Host' }],
+      'p1-user-': [{ name: 'Player 1' }]
+    };
+
+    render(<LobbyPage />);
+
+    const createBtn = screen.getByRole('button', { name: /Create Lobby/i });
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Waiting for Squad Leader to start/i)).toBeDefined();
+      expect(screen.queryByRole('button', { name: /Start Raid/i })).toBeNull();
+    });
   });
 });

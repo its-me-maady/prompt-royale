@@ -20,6 +20,8 @@ vi.mock('next/navigation', () => {
   };
 });
 
+const mockChannel = vi.fn();
+
 vi.mock('@/utils/supabase/client', () => {
   let presenceCallback: Function | null = null;
   
@@ -62,7 +64,10 @@ vi.mock('@/utils/supabase/client', () => {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         signInAnonymously: () => Promise.resolve({ data: { user: { id: 'p1' } }, error: null })
       },
-      channel: () => channelMock,
+      channel: (name: string, config?: any) => {
+        mockChannel(name, config);
+        return channelMock;
+      },
       from: () => dbMock
     })
   };
@@ -159,5 +164,18 @@ describe('Arena Page', () => {
 
     // Check if error message is displayed
     expect(screen.getByText(/Failed to record vote/i)).toBeDefined();
+  });
+
+  it('should initialize arena channel with explicit presence key tied to playerId', async () => {
+    render(<ArenaPage />);
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
+    expect(mockChannel).toHaveBeenCalledWith(
+      'boss-raid-test-squad-1',
+      { config: { presence: { key: 'p1' } } }
+    );
   });
 });

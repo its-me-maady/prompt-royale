@@ -100,7 +100,9 @@ function ArenaInner() {
     fetchGameState();
 
     // Setup broadcast channel for ephemeral round changes (timer, votes)
-    const channel = supabaseClient.channel(`boss-raid-${squadId}`);
+    const channel = supabaseClient.channel(`boss-raid-${squadId}`, {
+      config: { presence: { key: playerId } }
+    });
     channelRef.current = channel;
 
     channel
