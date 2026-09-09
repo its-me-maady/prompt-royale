@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Squad Lobby page with real-time Supabase Presence slot sync and redirection", deps: ["apps/web/src/app/lobby/page.tsx", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-01" }
+ * agent-notes: { ctx: "Squad Lobby page with creator-first presence host election and fallback", deps: ["apps/web/src/app/lobby/page.tsx", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-09" }
  */
 'use client';
 
@@ -31,6 +31,7 @@ function LobbyInner() {
   const [error, setError] = useState<string | null>(null);
 
   const channelRef = useRef<any>(null);
+  const isCreatorRef = useRef<boolean>(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -64,7 +65,14 @@ function LobbyInner() {
     channel
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
-        const activeMembers: LobbyMember[] = Object.keys(presenceState)
+        const activeMemberIds = Object.keys(presenceState);
+
+        // Find active member marked as creator
+        const creatorId = activeMemberIds.find(
+          (id) => (presenceState[id]?.[0] as any)?.isCreator === true
+        );
+
+        const activeMembers: LobbyMember[] = activeMemberIds
           .map((id) => ({
             playerId: id,
             name: (presenceState[id]?.[0] as any)?.name || `Player ${id}`
@@ -72,13 +80,20 @@ function LobbyInner() {
           .sort((a, b) => a.playerId.localeCompare(b.playerId));
 
         setMembers(activeMembers);
-        setIsHost(activeMembers[0]?.playerId === playerId);
+
+        // Elect creator as host if present; otherwise fall back to alphabetical first
+        if (creatorId) {
+          setIsHost(creatorId === playerId);
+        } else {
+          setIsHost(activeMembers[0]?.playerId === playerId);
+        }
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
             name: `Player ${playerId}`,
-            online_at: new Date().toISOString()
+            online_at: new Date().toISOString(),
+            isCreator: isCreatorRef.current
           });
         }
       });
@@ -115,6 +130,7 @@ function LobbyInner() {
       const res = await fetch('/api/lobby/create', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
+        isCreatorRef.current = true;
         setLobbyId(data.lobbyId);
         router.replace(`/lobby?id=${data.lobbyId}`);
       } else {
