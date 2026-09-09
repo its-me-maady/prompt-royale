@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Squad Lobby page with creator-first presence host election and fallback", deps: ["apps/web/src/app/lobby/page.tsx", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-09" }
+ * agent-notes: { ctx: "Squad Lobby page with creator-first presence host election and Realtime INSERT squad start redirect", deps: ["apps/web/src/app/lobby/page.tsx", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-09" }
  */
 'use client';
 
@@ -32,6 +32,7 @@ function LobbyInner() {
 
   const channelRef = useRef<any>(null);
   const isCreatorRef = useRef<boolean>(false);
+  const hasNavigatedRef = useRef<boolean>(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -98,19 +99,20 @@ function LobbyInner() {
         }
       });
 
-    // Listen to Database change on squads table to trigger automated redirect on start
+    // Listen to Database change on squads table to trigger automated redirect on start (INSERT or UPDATE)
     const squadsChannel = supabaseClient
       .channel(`lobby-squad-changes-${lobbyId}`)
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'squads',
           filter: `id=eq.${lobbyId}`
         },
         (payload: any) => {
-          if (payload.new && payload.new.status === 'active') {
+          if (!hasNavigatedRef.current && payload.new && payload.new.status === 'active') {
+            hasNavigatedRef.current = true;
             router.push(`/arena?squadId=${lobbyId}`);
           }
         }
