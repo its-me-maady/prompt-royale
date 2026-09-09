@@ -219,10 +219,60 @@ describe('Lobby Page', () => {
       json: async () => ({ lobbyId: 'squad-123' })
     } as Response);
 
-    // p0-alpha comes before p1-user- alphabetically, making p0-alpha host
+    // p0-alpha comes before p1-user- alphabetically and is creator
     mockPresenceState = {
-      'p0-alpha': [{ name: 'Alpha Host' }],
-      'p1-user-': [{ name: 'Player 1' }]
+      'p0-alpha': [{ name: 'Alpha Host', isCreator: true }],
+      'p1-user-': [{ name: 'Player 1', isCreator: false }]
+    };
+
+    render(<LobbyPage />);
+
+    const createBtn = screen.getByRole('button', { name: /Create Lobby/i });
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Waiting for Squad Leader to start/i)).toBeDefined();
+      expect(screen.queryByRole('button', { name: /Start Raid/i })).toBeNull();
+    });
+  });
+
+  it('should identify lobby creator as host even when another member’s playerId sorts alphabetically before theirs', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ lobbyId: 'squad-123' })
+    } as Response);
+
+    // Current client is 'p1-user-' (isCreator: true).
+    // 'a-joiner' sorts before 'p1-user-' alphabetically, but is not creator.
+    mockPresenceState = {
+      'a-joiner': [{ name: 'Alpha Joiner', isCreator: false }],
+      'p1-user-': [{ name: 'Creator Player', isCreator: true }]
+    };
+
+    render(<LobbyPage />);
+
+    const createBtn = screen.getByRole('button', { name: /Create Lobby/i });
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      const startBtn = screen.getByRole('button', { name: /Start Raid/i }) as HTMLButtonElement;
+      expect(startBtn).toBeDefined();
+      expect(startBtn.disabled).toBe(false);
+      expect(screen.queryByText(/Waiting for Squad Leader to start/i)).toBeNull();
+    });
+  });
+
+  it('should fall back to alphabetical rule when original creator is no longer present', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ lobbyId: 'squad-123' })
+    } as Response);
+
+    // Original creator left. Neither 'a-player' nor 'p1-user-' has isCreator: true.
+    // 'a-player' sorts before 'p1-user-', so alphabetical fallback elects 'a-player' as host.
+    mockPresenceState = {
+      'a-player': [{ name: 'Player A', isCreator: false }],
+      'p1-user-': [{ name: 'Player P1', isCreator: false }]
     };
 
     render(<LobbyPage />);
