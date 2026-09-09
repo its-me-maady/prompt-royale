@@ -47,12 +47,11 @@ Structural overview of the PromptRoyale codebase.
 | `src/lib/db/supabase-client.ts` | `supabaseClient` | Deprecated for auth (persists to localStorage only) |
 | `src/app/lobby/page.tsx` | `LobbyPage` | Real-time presence squad assembly with `MIN_SQUAD_SIZE = 2` start gate & manual Join by ID input |
 | `src/app/auth/callback/route.ts` | `GET` | PKCE auth code exchange route handler |
-| `src/app/api/kb/upload/route.ts` | `POST` | Course material ingestion route (audio, documents, & handwritten note vision OCR) |
+| `src/app/api/kb/upload/route.ts` | `POST` | Course material ingestion route |
 | `src/app/api/arena/question/route.ts` | `POST` | Grounded quiz question generator from KB embeddings |
 | `src/app/api/arena/resolve/route.ts` | `POST` | Raid round resolution triggering RPC |
 | `supabase/migrations/` | `*.sql` | Authoritative versioned SQL database migrations (ADR-0010) |
 | `supabase/config.toml` | Config | Supabase CLI project configuration |
-| `.agents/skills/handwritten-notes-ingestion` | Skill | 2-step pipeline: Gemini Vision OCR ➔ `text-embedding-004` ➔ Supabase `pgvector` |
 
 ## Test Inventory
 
