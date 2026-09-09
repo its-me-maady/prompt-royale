@@ -25,6 +25,8 @@ vi.mock('next/navigation', () => {
 let mockPresenceState: any = {};
 let mockSquadStatus: string | null = null;
 let presenceCallback: Function | null = null;
+let postgresChangesCallback: Function | null = null;
+let postgresChangesOpts: any = null;
 const mockChannel = vi.fn();
 
 vi.mock('@/utils/supabase/client', () => {
@@ -33,6 +35,9 @@ vi.mock('@/utils/supabase/client', () => {
       const cb = typeof opts === 'function' ? opts : callback;
       if (event === 'presence') {
         presenceCallback = cb;
+      } else if (event === 'postgres_changes') {
+        postgresChangesOpts = opts;
+        postgresChangesCallback = cb;
       }
       return channelMock;
     }),
@@ -284,5 +289,77 @@ describe('Lobby Page', () => {
       expect(screen.getByText(/Waiting for Squad Leader to start/i)).toBeDefined();
       expect(screen.queryByRole('button', { name: /Start Raid/i })).toBeNull();
     });
+  });
+
+  it('should redirect non-host member to /arena when Realtime emits a postgres_changes INSERT event with status active', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ lobbyId: 'squad-123' })
+    } as Response);
+
+    mockPush.mockClear();
+    mockPresenceState = {
+      'p0-alpha': [{ name: 'Host Player', isCreator: true }],
+      'p1-user-': [{ name: 'Non-Host Player', isCreator: false }]
+    };
+
+    render(<LobbyPage />);
+
+    const createBtn = screen.getByRole('button', { name: /Create Lobby/i });
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(postgresChangesOpts).toBeDefined();
+      expect(postgresChangesOpts.event).toBe('*');
+      expect(postgresChangesCallback).toBeDefined();
+    });
+
+    // Simulate an INSERT event (not UPDATE) emitted by Postgres Realtime when host starts raid
+    act(() => {
+      postgresChangesCallback!({
+        eventType: 'INSERT',
+        new: { id: 'squad-123', status: 'active' }
+      });
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/arena?squadId=squad-123');
+  });
+
+  it('should guard against duplicate navigation calls if multiple qualifying Realtime events are received', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ lobbyId: 'squad-123' })
+    } as Response);
+
+    mockPush.mockClear();
+    mockPresenceState = {
+      'p0-alpha': [{ name: 'Host Player', isCreator: true }],
+      'p1-user-': [{ name: 'Non-Host Player', isCreator: false }]
+    };
+
+    render(<LobbyPage />);
+
+    const createBtn = screen.getByRole('button', { name: /Create Lobby/i });
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(postgresChangesCallback).toBeDefined();
+    });
+
+    act(() => {
+      // First event: INSERT
+      postgresChangesCallback!({
+        eventType: 'INSERT',
+        new: { id: 'squad-123', status: 'active' }
+      });
+      // Second event: UPDATE
+      postgresChangesCallback!({
+        eventType: 'UPDATE',
+        new: { id: 'squad-123', status: 'active' }
+      });
+    });
+
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('/arena?squadId=squad-123');
   });
 });

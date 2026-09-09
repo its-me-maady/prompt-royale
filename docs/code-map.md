@@ -45,7 +45,7 @@ Structural overview of the PromptRoyale codebase.
 | `src/utils/supabase/server.ts` | `createClient()` | Server-side Supabase client with cookie session context |
 | `src/utils/supabase/middleware.ts` | `updateSession()` | SSR session refresh helper for protected routes |
 | `src/lib/db/supabase-client.ts` | `supabaseClient` | Deprecated for auth (persists to localStorage only) |
-| `src/app/lobby/page.tsx` | `LobbyPage` | Real-time presence squad assembly with `MIN_SQUAD_SIZE = 2` start gate, creator-first presence host election (with alphabetical fallback), & manual Join by ID input |
+| `src/app/lobby/page.tsx` | `LobbyPage` | Real-time presence squad assembly with `MIN_SQUAD_SIZE = 2` start gate, creator-first presence host election, Realtime `event: '*'` squad start redirect, & manual Join by ID input |
 | `src/app/auth/callback/route.ts` | `GET` | PKCE auth code exchange route handler |
 | `src/app/api/kb/upload/route.ts` | `POST` | Course material ingestion route |
 | `src/app/api/arena/question/route.ts` | `POST` | Grounded quiz question generator from KB embeddings |
