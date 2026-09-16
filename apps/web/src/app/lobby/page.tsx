@@ -187,29 +187,23 @@ function LobbyInner() {
     setError(null);
 
     try {
-      // 1. Create a squad record in Supabase database
-      const { error: dbErr } = await supabaseClient.from('squads').insert({
-        id: lobbyId,
-        status: 'active',
-        boss_hp: 1000,
-        boss_max_hp: 1000
+      const res = await fetch('/api/lobby/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lobbyId,
+          hostId: playerId,
+          members: members.map((m) => ({ playerId: m.playerId, name: m.name }))
+        })
       });
 
-      if (dbErr) throw dbErr;
-
-      // 2. Insert squad members
-      const memberInserts = members.map((m) => ({
-        squad_id: lobbyId,
-        player_id: m.playerId,
-        name: m.name,
-        hp: 100,
-        status: 'alive'
-      }));
-
-      const { error: memErr } = await supabaseClient.from('squad_members').insert(memberInserts);
-      if (memErr) throw memErr;
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to start raid');
+      }
 
       // Navigate host immediately
+      hasNavigatedRef.current = true;
       router.push(`/arena?squadId=${lobbyId}`);
     } catch (e: any) {
       setError(`Failed to initialize game: ${e.message || String(e)}`);

@@ -1,5 +1,5 @@
 /**
- * agent-notes: { ctx: "Real-time synchronized Boss Raid Arena with database-authoritative state resolution and dynamic questioning", deps: ["apps/web/src/app/api/arena/vote/route.ts", "apps/web/src/app/api/arena/resolve/route.ts", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-01" }
+ * agent-notes: { ctx: "Real-time synchronized Boss Raid Arena with host_player_id authoritative host election and dynamic questioning", deps: ["apps/web/src/app/api/arena/vote/route.ts", "apps/web/src/app/api/arena/resolve/route.ts", "apps/web/src/utils/supabase/client.ts"], state: "canonical", last: "sato@2026-09-16" }
  */
 'use client';
 
@@ -28,6 +28,7 @@ function ArenaInner() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [playerId, setPlayerId] = useState<string>('');
   const [isHost, setIsHost] = useState(false);
+  const [hostPlayerId, setHostPlayerId] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(60);
   const [votes, setVotes] = useState<PlayerVote[]>([]);
   const [myVote, setMyVote] = useState<number | null>(null);
@@ -40,6 +41,18 @@ function ArenaInner() {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const channelRef = useRef<any>(null);
+  const hostPlayerIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    hostPlayerIdRef.current = hostPlayerId;
+    if (hostPlayerId && playerId) {
+      const hostElected = hostPlayerId === playerId;
+      setIsHost(hostElected);
+      if (hostElected && !question) {
+        fetchQuestion();
+      }
+    }
+  }, [hostPlayerId, playerId]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -67,6 +80,10 @@ function ArenaInner() {
         .single();
 
       if (squadErr) throw squadErr;
+
+      if (squad.host_player_id) {
+        setHostPlayerId(squad.host_player_id);
+      }
 
       const { data: members, error: memErr } = await supabaseClient
         .from('squad_members')
@@ -109,7 +126,9 @@ function ArenaInner() {
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
         const playersIds = Object.keys(presenceState).sort();
-        const hostElected = playersIds[0] === playerId;
+        const hostElected = hostPlayerIdRef.current
+          ? hostPlayerIdRef.current === playerId
+          : playersIds[0] === playerId;
         setIsHost(hostElected);
         if (hostElected && !question) {
           fetchQuestion();
@@ -150,6 +169,11 @@ function ArenaInner() {
         { event: 'UPDATE', schema: 'public', table: 'squads', filter: `id=eq.${squadId}` },
         async (payload: any) => {
           const updatedSquad = payload.new;
+
+          if (updatedSquad.host_player_id) {
+            setHostPlayerId(updatedSquad.host_player_id);
+          }
+
           const { data: members } = await supabaseClient
             .from('squad_members')
             .select('*')
