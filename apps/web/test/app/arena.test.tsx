@@ -20,6 +20,8 @@ vi.mock('next/navigation', () => {
   };
 });
 
+let mockSquadData: any = { id: 'test-squad-1', boss_hp: 1000, boss_max_hp: 1000, status: 'active' };
+let mockPresenceState: any = { 'p1': [{ name: 'Player p1' }] };
 const mockChannel = vi.fn();
 
 vi.mock('@/utils/supabase/client', () => {
@@ -43,16 +45,14 @@ vi.mock('@/utils/supabase/client', () => {
     track: () => Promise.resolve({}),
     unsubscribe: () => {},
     send: () => {},
-    presenceState: () => ({
-      'p1': [{ name: 'Player p1' }]
-    })
+    presenceState: () => mockPresenceState
   };
 
   const dbMock: any = {
     select: () => dbMock,
     eq: () => dbMock,
     single: () => Promise.resolve({
-      data: { id: 'test-squad-1', boss_hp: 1000, boss_max_hp: 1000, status: 'active' },
+      data: mockSquadData,
       error: null
     }),
     insert: () => Promise.resolve({ data: null, error: null })
@@ -76,6 +76,8 @@ vi.mock('@/utils/supabase/client', () => {
 describe('Arena Page', () => {
   beforeEach(() => {
     vi.spyOn(Math, 'random').mockReturnValue(0.0001);
+    mockSquadData = { id: 'test-squad-1', boss_hp: 1000, boss_max_hp: 1000, status: 'active' };
+    mockPresenceState = { 'p1': [{ name: 'Player p1' }] };
 
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url === '/api/arena/revive' || url === '/api/arena/question') {
@@ -176,6 +178,36 @@ describe('Arena Page', () => {
     expect(mockChannel).toHaveBeenCalledWith(
       'boss-raid-test-squad-1',
       { config: { presence: { key: 'p1' } } }
+    );
+  });
+
+  it('should prioritize host_player_id from squad database state over alphabetical presence order', async () => {
+    // a0-first is alphabetically before p1 ('p1' is current client)
+    mockPresenceState = {
+      'a0-first': [{ name: 'Alpha Player' }],
+      'p1': [{ name: 'Player p1' }]
+    };
+
+    // Squad database row explicitly has host_player_id set to 'p1'
+    mockSquadData = {
+      id: 'test-squad-1',
+      boss_hp: 1000,
+      boss_max_hp: 1000,
+      status: 'active',
+      host_player_id: 'p1'
+    };
+
+    render(<ArenaPage />);
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
+
+    // Since host_player_id = 'p1', current client p1 is elected host and triggers fetchQuestion
+    expect(await screen.findByText(/Test question\?/i)).toBeDefined();
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/arena/question',
+      expect.objectContaining({ method: 'POST' })
     );
   });
 });

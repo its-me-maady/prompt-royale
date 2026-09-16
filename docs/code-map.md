@@ -48,6 +48,7 @@ Structural overview of the PromptRoyale codebase.
 | `src/app/lobby/page.tsx` | `LobbyPage` | Real-time presence squad assembly with `MIN_SQUAD_SIZE = 2` start gate, creator-first presence host election, Realtime `event: '*'` squad start redirect, & manual Join by ID input |
 | `src/app/auth/callback/route.ts` | `GET` | PKCE auth code exchange route handler |
 | `src/app/api/kb/upload/route.ts` | `POST` | Course material ingestion route |
+| `src/app/api/lobby/start/route.ts` | `POST` | Atomic raid initialization route triggering `start_raid` RPC |
 | `src/app/api/arena/question/route.ts` | `POST` | Grounded quiz question generator from KB embeddings |
 | `src/app/api/arena/resolve/route.ts` | `POST` | Raid round resolution triggering RPC |
 | `supabase/migrations/` | `*.sql` | Authoritative versioned SQL database migrations (ADR-0010) |

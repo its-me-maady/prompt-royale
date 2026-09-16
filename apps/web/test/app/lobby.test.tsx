@@ -362,4 +362,52 @@ describe('Lobby Page', () => {
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith('/arena?squadId=squad-123');
   });
+
+  it('should call /api/lobby/start POST endpoint with lobbyId, hostId, and members when Start Raid is clicked', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ lobbyId: 'squad-123' })
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: 'active', squad_id: 'squad-123' })
+      } as Response);
+
+    mockPresenceState = {
+      'p1-user-': [{ name: 'Creator Host', isCreator: true }],
+      'p2-user-': [{ name: 'Player 2', isCreator: false }]
+    };
+
+    render(<LobbyPage />);
+
+    const createBtn = screen.getByRole('button', { name: /Create Lobby/i });
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/squad-123/)).toBeDefined();
+    });
+
+    const startBtn = screen.getByRole('button', { name: /Start Raid/i });
+    fireEvent.click(startBtn);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/lobby/start',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lobbyId: 'squad-123',
+            hostId: 'p1-user-',
+            members: [
+              { playerId: 'p1-user-', name: 'Creator Host' },
+              { playerId: 'p2-user-', name: 'Player 2' }
+            ]
+          })
+        })
+      );
+      expect(mockPush).toHaveBeenCalledWith('/arena?squadId=squad-123');
+    });
+  });
 });
